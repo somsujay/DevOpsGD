@@ -46,7 +46,7 @@ schemachange deploy \
   --snowflake-private-key-path ~/.snowflake/ci_key.p8 \
   --snowflake-warehouse "$WAREHOUSE" \
   --snowflake-database "$DATABASE" \
-  --change-history-schema METADATA \
+  --change-history-table "$DATABASE.METADATA.CHANGE_HISTORY" \
   --create-change-history-table
 
 echo "==> Deployment complete for $ENV"
