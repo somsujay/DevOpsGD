@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>DevOps Operations Manual</title>
+  <script src="/libs/highlight.js@11.10.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/libs/highlight.js@11.10.0/github.min.css" />
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 920px; width: 100%; margin: 0 auto;
+      padding: clamp(16px, 4vw, 32px);
+      color: light-dark(#1e293b, #e2e8f0);
+      background: light-dark(#ffffff, #0f172a);
+      line-height: 1.7;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      color: light-dark(#0f172a, #f8fafc);
+      border-bottom: 3px solid light-dark(#29b5e8, #38bdf8);
+      padding-bottom: 12px;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: clamp(1.2rem, 3vw, 1.5rem);
+      color: light-dark(#1e40af, #93c5fd);
+      margin-top: 2.5rem;
+      border-bottom: 1px solid light-dark(#e2e8f0, #334155);
+      padding-bottom: 6px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      color: light-dark(#334155, #cbd5e1);
+      margin-top: 1.8rem;
+    }
+    h4 { color: light-dark(#475569, #94a3b8); margin-top: 1.4rem; }
+    a { color: light-dark(#2563eb, #60a5fa); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.88em;
+      background: light-dark(#f1f5f9, #1e293b);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid light-dark(#e2e8f0, #334155);
+    }
+    pre {
+      background: light-dark(#f8fafc, #1e293b);
+      border: 1px solid light-dark(#e2e8f0, #334155);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.85em;
+    }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td {
+      border: 1px solid light-dark(#cbd5e1, #475569);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.9em;
+    }
+    th {
+      background: light-dark(#f1f5f9, #1e293b);
+      font-weight: 600;
+      color: light-dark(#1e293b, #e2e8f0);
+    }
+    tr:nth-child(even) { background: light-dark(#f8fafc, #0f172a); }
+    .table-wrap { overflow-x: auto; margin: 16px 0; }
+    img, svg { max-width: 100%; height: auto; }
+    blockquote {
+      border-left: 4px solid light-dark(#29b5e8, #38bdf8);
+      margin: 16px 0;
+      padding: 8px 16px;
+      background: light-dark(#f0f9ff, #0c1a2e);
+      border-radius: 0 8px 8px 0;
+    }
+    blockquote p { margin: 8px 0; }
+    nav#TOC {
+      background: light-dark(#f8fafc, #1e293b);
+      border: 1px solid light-dark(#e2e8f0, #334155);
+      border-radius: 8px;
+      padding: 16px 24px;
+      margin-bottom: 32px;
+    }
+    nav#TOC > ul { padding-left: 0; list-style: none; }
+    nav#TOC ul { padding-left: 20px; }
+    nav#TOC li { margin: 4px 0; }
+    nav#TOC a { color: light-dark(#475569, #94a3b8); font-size: 0.9em; }
+    nav#TOC a:hover { color: light-dark(#2563eb, #60a5fa); }
+    .header-bar {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 4px;
+    }
+    .snowflake-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: light-dark(#eff6ff, #1e3a5f);
+      color: light-dark(#1e40af, #93c5fd);
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1px solid light-dark(#bfdbfe, #1e40af);
+    }
+    .subtitle {
+      color: light-dark(#64748b, #94a3b8);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid light-dark(#e2e8f0, #334155);
+      color: light-dark(#94a3b8, #64748b);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      table { font-size: 0.8em; }
+      th, td { padding: 6px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <span class="snowflake-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.09 3.26L16 4l-1.64 2.73L18 8l-3.26 1.09L16 12l-2.73-1.64L12 14l-1.27-3.64L8 12l1.26-2.91L6 8l3.64-1.27L8 4l2.91 1.26z"/></svg>
+      Snowflake Migration
+    </span>
+  </div>
+  <p class="subtitle">Finance Data Platform &mdash; Teradata to Snowflake</p>
+<h1 id="devops-operations-manual">DevOps Operations Manual</h1>
+<h2 id="architecture-overview">1. Architecture Overview</h2>
+<pre><code>┌──────────────────────────────────────────────────────────────────────────────┐
+│                           GitHub Repository                                   │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│ feature/* ─PR─► develop ─PR─► release/* ─PR─► main ─tag─► v*                │
+│     │              │              │                         │                 │
+│     ▼              ▼              ▼                         ▼                 │
+│ CI Lint       Deploy DEV     Deploy STAGE              Deploy Prod           │
+│                    │              │                         │                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+                     │              │                         │
+                     ▼              ▼                         ▼
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                       Snowflake (KXAXARZ-GW22129)                             │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  FINANCE_CORE_DEV (development)                                              │
+│    └── RAW / CLEAN / CONFORMED / GOVERNANCE / METADATA                       │
+│                                                                              │
+│  FINANCE_CORE_STAGE (staging)                                                │
+│    └── RAW / CLEAN / CONFORMED / GOVERNANCE / METADATA                       │
+│                                                                              │
+│  FINANCE_CORE_PROD (production)                                              │
+│    └── RAW / CLEAN / CONFORMED / GOVERNANCE / METADATA                       │
+│                                                                              │
+│  Warehouse: COMPUTE_WH (shared, XS)                                         │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<hr />
+<h2 id="project-structure">2. Project Structure</h2>
+<p>The SQL codebase uses <strong>schemachange</strong> for migration
+management, organized under the <code>banking/</code> root folder:</p>
+<pre><code>banking/
+├── _platform/
+│   └── V1.000.100__setup_schemas.sql           # Schema creation (RAW, CLEAN, CONFORMED, GOVERNANCE)
+├── raw/retail/
+│   └── V1.050.100__create_raw_tables.sql       # Raw staging tables (T_CUSTOMER, T_ACCOUNT, T_TRANSACTION)
+├── clean/retail/
+│   ├── V1.050.200__create_clean_tables.sql     # Clean dimension tables (DIMCUSTOMER, DIMACCOUNT, etc.)
+│   └── R__retail_clean_procedures.sql          # Repeatable: Clean ETL procedures (SCD-2, SCD-1)
+├── conformed/retail/
+│   ├── V1.050.300__create_conformed_tables.sql # Conformed fact tables (FACTDAILYTRANSACTION, FACTDAILYAGG)
+│   ├── R__retail_procedures.sql                # Repeatable: Conformed ETL procedures
+│   └── R__retail_views.sql                     # Repeatable: Conformed views (re-run every deploy)
+├── orchestration/
+│   ├── R__orchestration.sql                    # Repeatable: Daily_ETL_Run() orchestrator
+│   └── R__ingestion_tasks.sql                  # Repeatable: Ingestion task definitions
+├── reference/
+│   ├── R__seed_data.sql                        # Repeatable: Seed/reference data
+│   └── R__iceberg_objects.sql                  # Repeatable: Iceberg/Parquet ingestion objects
+└── governance/
+    ├── V1.900.100__create_masking_policies.sql # Masking policy table/setup
+    ├── V1.900.101__create_data_quality.sql     # DATA_QUALITY_LOG table creation
+    ├── R__masking_policies.sql                 # Repeatable: Masking policy definitions &amp; assignments
+    ├── R__data_quality_procedures.sql          # Repeatable: Data quality procedures
+    └── A__grants.sql                           # Always-run: grants (re-applied every deploy)</code></pre>
+<h3 id="schemachange-naming-conventions">2.1 Schemachange Naming
+Conventions</h3>
+<div class="table-wrap"><table style="width:100%;">
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 33%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Meaning</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>V&lt;ver&gt;__&lt;name&gt;.sql</code></td>
+<td>Versioned migration</td>
+<td>Runs once, tracked in change history</td>
+</tr>
+<tr>
+<td><code>R__&lt;name&gt;.sql</code></td>
+<td>Repeatable migration</td>
+<td>Re-runs if file content changes</td>
+</tr>
+<tr>
+<td><code>A__&lt;name&gt;.sql</code></td>
+<td>Always-run migration</td>
+<td>Runs on every deployment</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="schemachange-configuration">2.2 Schemachange Configuration</h3>
+<p>File: <code>schemachange-config.yml</code></p>
+<pre class="yaml"><code>root-folder: banking
+modules-folder: null
+vars:
+  database: &quot;FINANCE_CORE_DEV&quot;
+  warehouse: &quot;COMPUTE_WH&quot;
+  role: &quot;SYSADMIN&quot;
+  environment: &quot;dev&quot;
+  raw_schema: &quot;RAW&quot;
+  clean_schema: &quot;CLEAN&quot;
+  conformed_schema: &quot;CONFORMED&quot;
+  governance_schema: &quot;GOVERNANCE&quot;
+
+create-change-history-table: true
+change-history-table: &quot;FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY&quot;
+autocommit: true
+dry-run: false</code></pre>
+<h3 id="change-history">2.3 Change History</h3>
+<p>Schemachange tracks all applied migrations in
+<code>&lt;database&gt;.METADATA.SCHEMACHANGE_HISTORY</code>. Query it to
+see deployment state:</p>
+<pre class="sql"><code>SELECT * FROM FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY ORDER BY INSTALLED_ON DESC;</code></pre>
+<hr />
+<h2 id="cicd-pipeline">3. CI/CD Pipeline</h2>
+<h3 id="workflow-files">3.1 Workflow Files</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 37%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>File</th>
+<th>Purpose</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.github/workflows/ci.yml</code></td>
+<td>Lint + validate</td>
+<td>Push to <code>feature/*</code>, PR to <code>develop</code>,
+<code>release/*</code>, <code>main</code></td>
+</tr>
+<tr>
+<td><code>.github/workflows/deploy-dev.yml</code></td>
+<td>Deploy + smoke test DEV</td>
+<td>Push to <code>develop</code></td>
+</tr>
+<tr>
+<td><code>.github/workflows/deploy-stage.yml</code></td>
+<td>Deploy + test STAGE</td>
+<td>Push to <code>release/*</code></td>
+</tr>
+<tr>
+<td><code>.github/workflows/deploy-prod.yml</code></td>
+<td>Deploy + validate Prod</td>
+<td>Tag <code>v*</code> or manual dispatch</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="branching-strategy">3.2 Branching Strategy</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 26%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Branch</th>
+<th>Trigger</th>
+<th>Pipeline Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feature/*</code></td>
+<td>Push</td>
+<td>CI lint &amp; validate</td>
+</tr>
+<tr>
+<td><code>feature/*</code> → <code>develop</code></td>
+<td>PR</td>
+<td>CI lint &amp; validate</td>
+</tr>
+<tr>
+<td><code>develop</code></td>
+<td>Push (merge)</td>
+<td>Deploy to DEV</td>
+</tr>
+<tr>
+<td><code>develop</code> → <code>release/*</code></td>
+<td>PR</td>
+<td>CI lint &amp; validate</td>
+</tr>
+<tr>
+<td><code>release/*</code></td>
+<td>Push (merge)</td>
+<td>Deploy to STAGE + smoke + integration tests</td>
+</tr>
+<tr>
+<td><code>release/*</code> → <code>main</code></td>
+<td>PR</td>
+<td>CI lint &amp; validate</td>
+</tr>
+<tr>
+<td>Tag <code>v*</code> on <code>main</code></td>
+<td>Tag push</td>
+<td>Deploy to PROD + smoke + data validation</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="pipeline-stages">3.3 Pipeline Stages</h3>
+<pre><code>┌──────────────┐    ┌───────────────────┐    ┌─────────────────┐    ┌──────────────┐
+│ SQL Lint     │───►│ Deploy via        │───►│ Smoke Tests     │───►│ Integration  │
+│ (sqlfluff)   │    │ schemachange      │    │ (object exists) │    │ Tests        │
+└──────────────┘    └───────────────────┘    └─────────────────┘    └──────────────┘</code></pre>
+<h3 id="ci-lint-job-details">3.4 CI Lint Job Details</h3>
+<p>The CI workflow: 1. Lints <code>banking/</code> with sqlfluff 2.
+Validates versioned migration files (<code>V*.sql</code>) exist and are
+non-empty 3. Checks <code>environments.yml</code> has all required
+environments (dev, stage, prod) 4. Runs shellcheck on deployment
+scripts</p>
+<p>Path triggers: <code>banking/**</code>, <code>scripts/**</code>,
+<code>tests/**</code>, <code>environments.yml</code>,
+<code>schemachange-config.yml</code>, <code>.sqlfluff</code></p>
+<blockquote>
+<p><strong>Note:</strong> Branch patterns use <code>feature/**</code>
+(double-star) to match nested branch names like
+<code>feature/JIRA-123/add-table</code>. A single <code>*</code> only
+matches one path segment. Additionally, the CI workflow only triggers
+when changed files fall within the listed <code>paths</code> — pushes
+that only modify files outside these paths (e.g., README, docs) will not
+trigger the lint.</p>
+</blockquote>
+<blockquote>
+<p><strong>Important:</strong> GitHub Actions reads the workflow file
+from the branch being pushed. If your feature branch was created before
+<code>ci.yml</code> was updated with the <code>push</code> trigger, the
+workflow won’t fire because the branch still has the old version of
+<code>ci.yml</code>. Fix by rebasing or merging from
+<code>develop</code>:</p>
+<pre class="bash"><code>git checkout feature/xyz
+git merge develop   # brings in the updated ci.yml
+git push</code></pre>
+</blockquote>
+<h3 id="concurrency-controls">3.5 Concurrency Controls</h3>
+<p>All deploy workflows use concurrency groups to prevent parallel
+deployments:</p>
+<pre class="yaml"><code>concurrency:
+  group: deploy-&lt;env&gt;
+  cancel-in-progress: false   # Never cancel an in-flight deploy</code></pre>
+<h3 id="branch-guard-merge-path-enforcement">3.6 Branch Guard (Merge
+Path Enforcement)</h3>
+<p>The <code>branch-guard.yml</code> workflow automatically blocks PRs
+that don’t follow the allowed branching flow. It runs on every PR and
+fails if the source → target combination is invalid.</p>
+<p><strong>Allowed merge paths:</strong></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Source Branch</th>
+<th>Target Branch</th>
+<th>Allowed</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feature</code> / <code>feature/*</code></td>
+<td><code>develop</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>develop</code></td>
+<td><code>release/*</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>release/*</code></td>
+<td><code>main</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><code>hotfix/*</code></td>
+<td><code>main</code></td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Any other combination</td>
+<td>—</td>
+<td><strong>Blocked</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>File:</strong>
+<code>.github/workflows/branch-guard.yml</code></p>
+<p><strong>Making it a required check (recommended):</strong></p>
+<ol type="1">
+<li>Go to GitHub repo Settings &gt; Branches</li>
+<li>Add/edit branch protection rules for <code>develop</code>,
+<code>release/*</code>, and <code>main</code></li>
+<li>Enable “Require status checks to pass before merging”</li>
+<li>Search for and select <strong>“Enforce Branching
+Rules”</strong></li>
+</ol>
+<p>This prevents PRs from being merged even if someone force-approves a
+review.</p>
+<hr />
+<h2 id="secrets-management">4. Secrets Management</h2>
+<h3 id="required-github-secrets">4.1 Required GitHub Secrets</h3>
+<h4 id="non-production-dev-stage">Non-Production (DEV, STAGE)</h4>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 29%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Secret</th>
+<th>Value</th>
+<th>Used By</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SNOWFLAKE_ACCOUNT</code></td>
+<td><code>KXAXARZ-GW22129</code></td>
+<td>deploy-dev, deploy-stage</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_USER</code></td>
+<td><code>SOMSUJAY</code></td>
+<td>deploy-dev, deploy-stage</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_PRIVATE_KEY</code></td>
+<td>RSA private key (PEM)</td>
+<td>deploy-dev, deploy-stage</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="production">Production</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Secret</th>
+<th>Value</th>
+<th>Used By</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SNOWFLAKE_PROD_ACCOUNT</code></td>
+<td><code>KXAXARZ-GW22129</code></td>
+<td>deploy-prod</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_PROD_USER</code></td>
+<td><code>SOMSUJAY</code></td>
+<td>deploy-prod</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_PROD_PRIVATE_KEY</code></td>
+<td>RSA private key (PEM)</td>
+<td>deploy-prod</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="key-rotation-procedure">4.2 Key Rotation Procedure</h3>
+<ol type="1">
+<li><p>Generate new key pair:</p>
+<pre class="bash"><code>openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out new_key.p8 -nocrypt
+openssl rsa -in new_key.p8 -pubout -out new_key.pub</code></pre></li>
+<li><p>Register new key in Snowflake (use RSA_PUBLIC_KEY_2 for
+zero-downtime rotation):</p>
+<pre class="sql"><code>ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY_2=&#39;&lt;new-public-key&gt;&#39;;</code></pre></li>
+<li><p>Update GitHub secret <code>SNOWFLAKE_PRIVATE_KEY</code> with new
+key contents.</p></li>
+<li><p>Verify CI passes with new key.</p></li>
+<li><p>Remove old key:</p>
+<pre class="sql"><code>ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY=&#39;&lt;new-public-key&gt;&#39;;
+ALTER USER SOMSUJAY UNSET RSA_PUBLIC_KEY_2;</code></pre></li>
+</ol>
+<h3 id="key-rotation-schedule">4.3 Key Rotation Schedule</h3>
+<ul>
+<li>Rotate every 90 days</li>
+<li>Rotate immediately if any key exposure is suspected</li>
+</ul>
+<hr />
+<h2 id="deployment-procedures">5. Deployment Procedures</h2>
+<h3 id="primary-deployment-schemachange">5.1 Primary Deployment:
+Schemachange</h3>
+<p>The primary deployment method uses
+<code>scripts/deploy_schemachange.sh</code>, which invokes schemachange
+against the <code>banking/</code> root folder:</p>
+<pre class="bash"><code># Deploy to dev (local)
+export SNOWFLAKE_ACCOUNT=KXAXARZ-GW22129
+export SNOWFLAKE_USER=SOMSUJAY
+bash scripts/deploy_schemachange.sh --env=dev
+
+# Deploy to stage
+bash scripts/deploy_schemachange.sh --env=stage
+
+# Dry-run (no changes made)
+bash scripts/deploy_schemachange.sh --env=prod --dry-run</code></pre>
+<p>The script: 1. Reads database/warehouse/connection from
+<code>environments.yml</code> 2. Authenticates via RSA private key
+(<code>SNOWFLAKE_PRIVATE_KEY_PATH</code> or
+<code>~/.snowflake/ci_key.p8</code>) 3. Runs
+<code>schemachange deploy</code> against the <code>banking/</code>
+folder 4. Passes <code>database</code>, <code>warehouse</code>,
+<code>role</code>, <code>environment</code>, and schema names as
+template variables 5. Tracks history in
+<code>&lt;database&gt;.METADATA.SCHEMACHANGE_HISTORY</code></p>
+<h3 id="legacy-deployment-deploy.sh">5.2 Legacy Deployment:
+deploy.sh</h3>
+<p><code>scripts/deploy.sh</code> is the legacy deployer that executes
+SQL scripts directly via <code>snow sql</code>. It can still be used for
+manual deployments but schemachange is the primary method.</p>
+<h3 id="standard-release-dev-stage-prod">5.3 Standard Release (DEV →
+STAGE → PROD)</h3>
+<pre class="bash"><code># 1. Create release branch from develop
+git checkout develop &amp;&amp; git pull
+git checkout -b release/v1.3.0
+
+# 2. Push triggers deploy-stage.yml automatically (schemachange)
+git push -u origin release/v1.3.0
+
+# 3. After STAGE passes, merge to main
+gh pr create --base main --title &quot;Release v1.3.0&quot;
+gh pr merge &lt;pr-number&gt; --merge
+
+# 4. Tag for production (triggers deploy-prod.yml)
+git checkout main &amp;&amp; git pull
+git tag v1.3.0
+git push origin v1.3.0</code></pre>
+<h3 id="hotfix-release">5.4 Hotfix Release</h3>
+<pre class="bash"><code># 1. Branch from main
+git checkout main &amp;&amp; git pull
+git checkout -b hotfix/fix-critical-bug
+
+# 2. Apply fix, push, create PR to main
+git push -u origin hotfix/fix-critical-bug
+gh pr create --base main --title &quot;Hotfix: fix critical bug&quot;
+
+# 3. Merge to main
+gh pr merge &lt;pr-number&gt; --merge
+
+# 4. Tag for prod
+git checkout main &amp;&amp; git pull
+git tag v1.2.1
+git push origin v1.2.1
+
+# 5. Back-merge to develop
+git checkout develop &amp;&amp; git merge main &amp;&amp; git push</code></pre>
+<h3 id="manual-deployment-production">5.5 Manual Deployment
+(Production)</h3>
+<p>Via GitHub Actions UI or CLI:</p>
+<pre class="bash"><code>gh workflow run deploy-prod.yml -f action=deploy</code></pre>
+<h3 id="adding-a-new-migration">5.6 Adding a New Migration</h3>
+<pre class="bash"><code># 1. Create a new versioned migration file
+#    Use the next version number and a descriptive name
+touch banking/&lt;layer&gt;/&lt;domain&gt;/V1.11.0__add_new_table.sql
+
+# 2. Write your SQL (use Jinja vars for database targeting)
+#    Available vars: {{database}}, {{warehouse}}, {{role}}, {{environment}},
+#                    {{raw_schema}}, {{clean_schema}},
+#                    {{conformed_schema}}, {{governance_schema}}
+
+# 3. Test locally with dry-run
+bash scripts/deploy_schemachange.sh --env=dev --dry-run
+
+# 4. Deploy to dev
+bash scripts/deploy_schemachange.sh --env=dev</code></pre>
+<hr />
+<h2 id="rollback-procedures">6. Rollback Procedures</h2>
+<h3 id="automated-rollback-production">6.1 Automated Rollback
+(Production)</h3>
+<pre class="bash"><code># Via GitHub CLI
+gh workflow run deploy-prod.yml \
+  -f action=rollback \
+  -f rollback_version=v1.2.0
+
+# Via GitHub Actions UI
+# Navigate to Actions &gt; Deploy to PROD &gt; Run workflow
+# Select action=rollback, enter version tag</code></pre>
+<h3 id="manual-rollback-any-environment">6.2 Manual Rollback (Any
+Environment)</h3>
+<pre class="bash"><code># Rollback STAGE to a specific version
+bash scripts/rollback.sh --env=stage --version=v1.2.0
+
+# Rollback Prod to a specific commit SHA
+bash scripts/rollback.sh --env=prod --version=abc123f</code></pre>
+<h3 id="rollback-process">6.3 Rollback Process</h3>
+<p>The <code>rollback.sh</code> script: 1. Validates the target git ref
+exists 2. Extracts <code>Snowflake_Scripts/</code> from that version
+(legacy format) 3. Re-deploys all SQL scripts from the old version 4.
+Runs smoke tests to confirm rollback success</p>
+<p><strong>Note:</strong> The rollback script currently operates on the
+legacy <code>Snowflake_Scripts/</code> directory. For schemachange-based
+rollbacks, create a new migration that reverses the changes.</p>
+<h3 id="schemachange-rollback-strategy">6.4 Schemachange Rollback
+Strategy</h3>
+<p>Since schemachange tracks applied versions, rolling back requires one
+of: - <strong>Fix-forward</strong>: Create a new
+<code>V&lt;next&gt;__revert_&lt;change&gt;.sql</code> migration -
+<strong>Manual revert</strong>: Drop/alter objects directly, then update
+the change history table - <strong>Full redeploy</strong>: Drop the
+database, recreate, and run schemachange from scratch</p>
+<h3 id="rollback-decision-matrix">6.5 Rollback Decision Matrix</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 34%" />
+<col style="width: 37%" />
+<col style="width: 27%" />
+</colgroup>
+<thead>
+<tr>
+<th>Severity</th>
+<th>Detection</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Data corruption</td>
+<td>Integration tests fail</td>
+<td>Immediate rollback + incident</td>
+</tr>
+<tr>
+<td>Procedure failure</td>
+<td>Smoke tests fail</td>
+<td>Rollback, investigate</td>
+</tr>
+<tr>
+<td>Performance degradation</td>
+<td>Monitoring alert</td>
+<td>Assess, rollback if SLA breach</td>
+</tr>
+<tr>
+<td>Cosmetic / non-blocking</td>
+<td>Manual observation</td>
+<td>Fix-forward in next release</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="environment-management">7. Environment Management</h2>
+<h3 id="configuration-file">7.1 Configuration File</h3>
+<p><code>environments.yml</code> is the single source of truth:</p>
+<pre class="yaml"><code>dev:
+  database: FINANCE_CORE_DEV
+  raw_schema: RAW
+  clean_schema: CLEAN
+  conformed_schema: CONFORMED
+  governance_schema: GOVERNANCE
+  warehouse: COMPUTE_WH
+  connection: MY_TRIAL_ACCOUNT
+
+stage:
+  database: FINANCE_CORE_STAGE
+  raw_schema: RAW
+  clean_schema: CLEAN
+  conformed_schema: CONFORMED
+  governance_schema: GOVERNANCE
+  warehouse: COMPUTE_WH
+  connection: MY_TRIAL_ACCOUNT
+
+prod:
+  database: FINANCE_CORE_PROD
+  raw_schema: RAW
+  clean_schema: CLEAN
+  conformed_schema: CONFORMED
+  governance_schema: GOVERNANCE
+  warehouse: COMPUTE_WH
+  connection: MY_TRIAL_ACCOUNT</code></pre>
+<p>Each environment is a <strong>separate database</strong> with
+identical schema names. No schema suffixes are used.</p>
+<h3 id="environment-variable-overrides">7.2 Environment Variable
+Overrides</h3>
+<p>Scripts accept runtime overrides:</p>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 28%" />
+<col style="width: 40%" />
+</colgroup>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SNOWFLAKE_ACCOUNT</code></td>
+<td>(required in CI)</td>
+<td>Snowflake account identifier</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_USER</code></td>
+<td>(required in CI)</td>
+<td>Snowflake user name</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_PRIVATE_KEY_PATH</code></td>
+<td><code>~/.snowflake/ci_key.p8</code></td>
+<td>Path to RSA private key</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_ROLE</code></td>
+<td><code>SYSADMIN</code></td>
+<td>Role for schemachange</td>
+</tr>
+<tr>
+<td><code>SNOWFLAKE_WAREHOUSE</code></td>
+<td>From environments.yml</td>
+<td>Compute warehouse override</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="provisioning-a-new-environment">7.3 Provisioning a New
+Environment</h3>
+<pre class="sql"><code>-- Each environment gets its own database:
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_DEV;
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_STAGE;
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;
+
+-- Grant warehouse usage
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE SYSADMIN;</code></pre>
+<pre class="bash"><code># Deploy with schemachange
+bash scripts/deploy_schemachange.sh --env=&lt;env&gt;
+
+# Verify
+bash scripts/run_smoke_tests.sh --env=&lt;env&gt;</code></pre>
+<hr />
+<h2 id="monitoring-and-alerting">8. Monitoring and Alerting</h2>
+<h3 id="deployment-health-checks">8.1 Deployment Health Checks</h3>
+<p>After every deployment, the pipeline validates:</p>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 24%" />
+<col style="width: 37%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Check</th>
+<th>Test File</th>
+<th>Validates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Schema existence</td>
+<td><code>tests/smoke_test.sql</code></td>
+<td>RAW, CLEAN, CONFORMED, GOVERNANCE schemas</td>
+</tr>
+<tr>
+<td>Object existence</td>
+<td><code>tests/smoke_test.sql</code></td>
+<td>All tables, views, stages, tasks</td>
+</tr>
+<tr>
+<td>Object counts</td>
+<td><code>tests/integration_test.sql</code></td>
+<td>Minimum expected objects per schema</td>
+</tr>
+<tr>
+<td>Procedure availability</td>
+<td><code>tests/integration_test.sql</code></td>
+<td>All ETL procedures callable</td>
+</tr>
+<tr>
+<td>Masking policies</td>
+<td><code>tests/integration_test.sql</code></td>
+<td>Governance policies deployed</td>
+</tr>
+<tr>
+<td>Data quality table</td>
+<td><code>tests/integration_test.sql</code></td>
+<td>DATA_QUALITY_LOG exists</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="github-actions-notifications">8.2 GitHub Actions
+Notifications</h3>
+<ul>
+<li><strong>Success</strong>: <code>::notice</code> annotation on the
+workflow run</li>
+<li><strong>Failure</strong>: <code>::error</code> annotation with
+rollback instructions</li>
+</ul>
+<h3 id="manual-health-check">8.3 Manual Health Check</h3>
+<pre class="bash"><code>snow sql -c MY_TRIAL_ACCOUNT -q &quot;
+  SELECT TABLE_SCHEMA, COUNT(*) AS object_count
+  FROM FINANCE_CORE_DEV.INFORMATION_SCHEMA.TABLES
+  GROUP BY TABLE_SCHEMA
+  ORDER BY TABLE_SCHEMA;
+&quot;</code></pre>
+<h3 id="checking-migration-state">8.4 Checking Migration State</h3>
+<pre class="bash"><code>snow sql -c MY_TRIAL_ACCOUNT -q &quot;
+  SELECT VERSION, SCRIPT, INSTALLED_ON, STATUS
+  FROM FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY
+  ORDER BY INSTALLED_ON DESC
+  LIMIT 20;
+&quot;</code></pre>
+<hr />
+<h2 id="incident-response">9. Incident Response</h2>
+<h3 id="severity-levels">9.1 Severity Levels</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 15%" />
+<col style="width: 27%" />
+<col style="width: 34%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr>
+<th>Level</th>
+<th>Definition</th>
+<th>Response Time</th>
+<th>Examples</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SEV1</td>
+<td>Production data loss or corruption</td>
+<td>Immediate</td>
+<td>ETL writing bad data, tables dropped</td>
+</tr>
+<tr>
+<td>SEV2</td>
+<td>Production pipeline broken</td>
+<td>30 minutes</td>
+<td>Procedures failing, tasks stuck</td>
+</tr>
+<tr>
+<td>SEV3</td>
+<td>Non-prod broken or degraded performance</td>
+<td>4 hours</td>
+<td>Stage deploy failure, slow queries</td>
+</tr>
+<tr>
+<td>SEV4</td>
+<td>Cosmetic or documentation issue</td>
+<td>Next sprint</td>
+<td>Lint warnings, README outdated</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="sev1sev2-response-playbook">9.2 SEV1/SEV2 Response Playbook</h3>
+<pre><code>1. ASSESS
+   - Check GitHub Actions run logs
+   - Check Snowflake query history: SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
+   - Check migration state: SELECT * FROM &lt;DB&gt;.METADATA.SCHEMACHANGE_HISTORY ORDER BY INSTALLED_ON DESC;
+
+2. CONTAIN
+   - Suspend tasks if ETL is producing bad data:
+     ALTER TASK RAW.TASK_LOAD_CUSTOMER SUSPEND;
+     ALTER TASK RAW.TASK_LOAD_ACCOUNT SUSPEND;
+     ALTER TASK RAW.TASK_LOAD_TRANSACTION SUSPEND;
+
+3. ROLLBACK (if needed)
+   gh workflow run deploy-prod.yml -f action=rollback -f rollback_version=&lt;last-good-tag&gt;
+
+4. VALIDATE
+   bash scripts/run_smoke_tests.sh --env=prod
+
+5. COMMUNICATE
+   - Post incident summary
+   - Create follow-up ticket for root cause analysis</code></pre>
+<h3 id="common-failure-scenarios">9.3 Common Failure Scenarios</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 31%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Symptoms</th>
+<th>Resolution</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Warehouse suspended</td>
+<td><code>Warehouse COMPUTE_WH cannot be resumed</code></td>
+<td><code>ALTER WAREHOUSE COMPUTE_WH RESUME;</code></td>
+</tr>
+<tr>
+<td>Key expired</td>
+<td><code>JWT token is invalid</code></td>
+<td>Rotate key (Section 4.2)</td>
+</tr>
+<tr>
+<td>Account locked</td>
+<td><code>Authentication failed</code></td>
+<td>Unlock via Snowflake UI, check login attempts</td>
+</tr>
+<tr>
+<td>Quota exceeded</td>
+<td><code>Exceeded resource limit</code></td>
+<td>Check
+<code>SNOWFLAKE.ACCOUNT_USAGE.WAREHOUSE_METERING_HISTORY</code></td>
+</tr>
+<tr>
+<td>Task stuck</td>
+<td>Task shows EXECUTING indefinitely</td>
+<td><code>ALTER TASK ... SUSPEND;</code> then <code>RESUME;</code></td>
+</tr>
+<tr>
+<td>Migration already applied</td>
+<td><code>Version already exists in change history</code></td>
+<td>Check if script was already run; bump version if content
+changed</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="maintenance-tasks">10. Maintenance Tasks</h2>
+<h3 id="regular-maintenance-schedule">10.1 Regular Maintenance
+Schedule</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Frequency</th>
+<th>Procedure</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Key rotation</td>
+<td>Every 90 days</td>
+<td>Section 4.2</td>
+</tr>
+<tr>
+<td>Review query history</td>
+<td>Weekly</td>
+<td>Check long-running queries</td>
+</tr>
+<tr>
+<td>Warehouse sizing</td>
+<td>Monthly</td>
+<td>Analyze <code>WAREHOUSE_LOAD_HISTORY</code></td>
+</tr>
+<tr>
+<td>Stale data check</td>
+<td>Daily (automated)</td>
+<td><code>Run_Data_Quality_Checks()</code></td>
+</tr>
+<tr>
+<td>GitHub Actions cleanup</td>
+<td>Monthly</td>
+<td>Delete old workflow runs</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="cleaning-up-failed-deployments">10.2 Cleaning Up Failed
+Deployments</h3>
+<p>If a deployment partially completed:</p>
+<pre class="bash"><code># Option A: Re-run schemachange (idempotent for already-applied versions)
+bash scripts/deploy_schemachange.sh --env=&lt;env&gt;
+
+# Option B: Nuclear option - drop everything and redeploy from scratch
+bash scripts/drop_objects.sh --confirm
+bash scripts/deploy_schemachange.sh --env=&lt;env&gt;</code></pre>
+<h3 id="database-cloning-for-testing">10.3 Database Cloning (For
+Testing)</h3>
+<pre class="sql"><code>-- Clone prod to a test database
+CREATE DATABASE FINANCE_CORE_TEST CLONE FINANCE_CORE_PROD;</code></pre>
+<hr />
+<h2 id="access-control">11. Access Control</h2>
+<h3 id="current-setup">11.1 Current Setup</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 28%" />
+<col style="width: 38%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Role</th>
+<th>Access</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ACCOUNTADMIN</code></td>
+<td>Full access</td>
+<td>Deployments, DDL, grants</td>
+</tr>
+<tr>
+<td><code>SYSADMIN</code></td>
+<td>Database management</td>
+<td>Object creation (schemachange default)</td>
+</tr>
+<tr>
+<td><code>PUBLIC</code></td>
+<td>Read-only on views</td>
+<td>Dashboards, reporting</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="principle-of-least-privilege-recommended">11.2 Principle of
+Least Privilege (Recommended)</h3>
+<p>For production hardening, create dedicated roles:</p>
+<pre class="sql"><code>-- Deployment role (used by CI/CD)
+CREATE ROLE IF NOT EXISTS DEPLOY_ROLE;
+GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE DEPLOY_ROLE;
+GRANT ALL ON DATABASE FINANCE_CORE_PROD TO ROLE DEPLOY_ROLE;
+GRANT ROLE DEPLOY_ROLE TO USER SOMSUJAY;
+
+-- Read-only role (for dashboards)
+CREATE ROLE IF NOT EXISTS READER_ROLE;
+GRANT USAGE ON DATABASE FINANCE_CORE_PROD TO ROLE READER_ROLE;
+GRANT USAGE ON SCHEMA FINANCE_CORE_PROD.CONFORMED TO ROLE READER_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA FINANCE_CORE_PROD.CONFORMED TO ROLE READER_ROLE;
+GRANT SELECT ON ALL VIEWS IN SCHEMA FINANCE_CORE_PROD.CONFORMED TO ROLE READER_ROLE;</code></pre>
+<hr />
+<h2 id="linting-and-code-quality">12. Linting and Code Quality</h2>
+<h3 id="sqlfluff-configuration">12.1 SQLFluff Configuration</h3>
+<p>File: <code>.sqlfluff</code></p>
+<pre class="ini"><code>[sqlfluff]
+dialect = snowflake
+templater = raw
+max_line_length = 120
+exclude_rules = LT05, RF04, LT02
+
+[sqlfluff:indentation]
+indent_unit = space
+tab_space_size = 4
+
+[sqlfluff:rules:capitalisation.keywords]
+capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.functions]
+extended_capitalisation_policy = upper
+
+[sqlfluff:rules:capitalisation.types]
+extended_capitalisation_policy = upper
+
+[sqlfluff:paths]
+ignore = Teradata_Scripts</code></pre>
+<h3 id="rule-exclusions">12.2 Rule Exclusions</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 77%" />
+</colgroup>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Reason for Exclusion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LT05</code></td>
+<td>Allow lines up to 120 chars (SQL DDL can be verbose)</td>
+</tr>
+<tr>
+<td><code>RF04</code></td>
+<td>Column names like STATUS, DATE, TYPE are valid Snowflake
+identifiers</td>
+</tr>
+<tr>
+<td><code>LT02</code></td>
+<td>DDL property indentation is intentional for readability</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="running-lint-locally">12.3 Running Lint Locally</h3>
+<pre class="bash"><code># Check for issues
+sqlfluff lint banking/ --dialect snowflake --config .sqlfluff
+
+# Auto-fix issues
+sqlfluff fix banking/ --dialect snowflake --config .sqlfluff --force</code></pre>
+<h3 id="pre-commit-hook-optional">12.4 Pre-Commit Hook (Optional)</h3>
+<pre class="bash"><code># .git/hooks/pre-commit
+#!/bin/bash
+sqlfluff lint banking/ --dialect snowflake --config .sqlfluff</code></pre>
+<hr />
+<h2 id="disaster-recovery">13. Disaster Recovery</h2>
+<h3 id="snowflake-time-travel">13.1 Snowflake Time Travel</h3>
+<p>All tables have default 1-day retention. To recover dropped/modified
+data:</p>
+<pre class="sql"><code>-- Query data as of 1 hour ago
+SELECT * FROM RAW.T_CUSTOMER AT(OFFSET =&gt; -3600);
+
+-- Restore a dropped table
+UNDROP TABLE CLEAN.DIMCUSTOMER;
+
+-- Clone table from a point in time
+CREATE TABLE CLEAN.DIMCUSTOMER_BACKUP CLONE CLEAN.DIMCUSTOMER
+  AT(TIMESTAMP =&gt; &#39;2026-07-15 10:00:00&#39;::TIMESTAMP);</code></pre>
+<h3 id="full-environment-recovery">13.2 Full Environment Recovery</h3>
+<pre class="bash"><code># 1. Recreate database
+snow sql -c MY_TRIAL_ACCOUNT -q &quot;CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;&quot;
+
+# 2. Redeploy all migrations from scratch
+git checkout $(git describe --tags --abbrev=0)
+bash scripts/deploy_schemachange.sh --env=prod
+
+# 3. Reload data (if needed)
+bash scripts/run_historical.sh --env=prod
+bash scripts/run_incremental.sh</code></pre>
+<hr />
+<h2 id="contacts-and-escalation">14. Contacts and Escalation</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Responsibility</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>DevOps Engineer</td>
+<td>Pipeline failures, secret rotation, infra</td>
+</tr>
+<tr>
+<td>Data Engineer</td>
+<td>ETL logic, procedure bugs, data quality</td>
+</tr>
+<tr>
+<td>DBA</td>
+<td>Warehouse sizing, access control, performance</td>
+</tr>
+<tr>
+<td>Product Owner</td>
+<td>Release approval, rollback decisions</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h2 id="detailed-configuration-steps">15. Detailed Configuration
+Steps</h2>
+<h3 id="snowflake-account-setup">15.1 Snowflake Account Setup</h3>
+<h4 id="step-1-verify-account-access">Step 1: Verify Account Access</h4>
+<pre class="bash"><code>snow sql -c MY_TRIAL_ACCOUNT -q &quot;SELECT CURRENT_ACCOUNT_NAME(), CURRENT_USER(), CURRENT_ROLE()&quot;</code></pre>
+<h4 id="step-2-create-warehouse-if-not-exists">Step 2: Create Warehouse
+(if not exists)</h4>
+<pre class="sql"><code>CREATE WAREHOUSE IF NOT EXISTS COMPUTE_WH
+  WAREHOUSE_SIZE = &#39;X-SMALL&#39;
+  AUTO_SUSPEND = 60
+  AUTO_RESUME = TRUE
+  INITIALLY_SUSPENDED = TRUE
+  COMMENT = &#39;Shared compute for ETL pipeline&#39;;</code></pre>
+<h4 id="step-3-create-databases">Step 3: Create Databases</h4>
+<pre class="sql"><code>CREATE DATABASE IF NOT EXISTS FINANCE_CORE_DEV;
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_STAGE;
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;</code></pre>
+<h4 id="step-4-grant-permissions">Step 4: Grant Permissions</h4>
+<pre class="sql"><code>GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE SYSADMIN;
+GRANT ALL ON DATABASE FINANCE_CORE_DEV TO ROLE SYSADMIN;
+GRANT ALL ON DATABASE FINANCE_CORE_STAGE TO ROLE SYSADMIN;
+GRANT ALL ON DATABASE FINANCE_CORE_PROD TO ROLE SYSADMIN;</code></pre>
+<hr />
+<h3 id="local-development-environment-setup">15.2 Local Development
+Environment Setup</h3>
+<h4 id="step-1-install-prerequisites">Step 1: Install Prerequisites</h4>
+<pre class="bash"><code># Snowflake CLI
+pip install snowflake-cli-labs
+
+# SQL linting
+pip install sqlfluff
+
+# Schemachange
+pip install schemachange
+
+# Verify installations
+snow --version
+sqlfluff version
+schemachange --version</code></pre>
+<h4 id="step-2-generate-rsa-key-pair">Step 2: Generate RSA Key Pair</h4>
+<pre class="bash"><code>openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.snowflake/trial_key.p8 -nocrypt
+chmod 600 ~/.snowflake/trial_key.p8
+openssl rsa -in ~/.snowflake/trial_key.p8 -pubout -out ~/.snowflake/trial_key.pub</code></pre>
+<h4 id="step-3-register-public-key-in-snowflake">Step 3: Register Public
+Key in Snowflake</h4>
+<pre class="bash"><code>grep -v &quot;^---&quot; ~/.snowflake/trial_key.pub | tr -d &#39;\n&#39;</code></pre>
+<pre class="sql"><code>ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY=&#39;&lt;paste-key-body-here&gt;&#39;;</code></pre>
+<h4 id="step-4-configure-connections.toml">Step 4: Configure
+connections.toml</h4>
+<p>Create/edit <code>~/.snowflake/connections.toml</code>:</p>
+<pre class="toml"><code>[MY_TRIAL_ACCOUNT]
+account = &quot;KXAXARZ-GW22129&quot;
+user = &quot;SOMSUJAY&quot;
+authenticator = &quot;SNOWFLAKE_JWT&quot;
+private_key_path = &quot;/Users/&lt;your-username&gt;/.snowflake/trial_key.p8&quot;
+warehouse = &quot;COMPUTE_WH&quot;
+database = &quot;FINANCE_CORE_DEV&quot;</code></pre>
+<pre class="bash"><code>chmod 600 ~/.snowflake/connections.toml</code></pre>
+<h4 id="step-5-verify-connection">Step 5: Verify Connection</h4>
+<pre class="bash"><code>snow sql -c MY_TRIAL_ACCOUNT -q &quot;SELECT &#39;Connection OK&#39; AS status, CURRENT_WAREHOUSE() AS wh&quot;</code></pre>
+<hr />
+<h3 id="github-repository-configuration">15.3 GitHub Repository
+Configuration</h3>
+<h4 id="step-1-create-github-environments">Step 1: Create GitHub
+Environments</h4>
+<p>Navigate to <strong>Settings &gt; Environments</strong> and
+create:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>Protection Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dev</code></td>
+<td>None (auto-deploy)</td>
+</tr>
+<tr>
+<td><code>stage</code></td>
+<td>1 reviewer (recommended)</td>
+</tr>
+<tr>
+<td><code>production</code></td>
+<td>Required reviewers (2), wait timer (optional)</td>
+</tr>
+</tbody>
+</table></div>
+<h4 id="step-2-configure-repository-secrets">Step 2: Configure
+Repository Secrets</h4>
+<pre><code>SNOWFLAKE_ACCOUNT        = KXAXARZ-GW22129
+SNOWFLAKE_USER           = SOMSUJAY
+SNOWFLAKE_PRIVATE_KEY    = &lt;contents of ~/.snowflake/trial_key.p8&gt;
+
+SNOWFLAKE_PROD_ACCOUNT   = KXAXARZ-GW22129
+SNOWFLAKE_PROD_USER      = SOMSUJAY
+SNOWFLAKE_PROD_PRIVATE_KEY = &lt;contents of ~/.snowflake/trial_key.p8&gt;</code></pre>
+<h4 id="step-3-configure-branch-protection-rules">Step 3: Configure
+Branch Protection Rules</h4>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Branch Pattern</th>
+<th>Rules</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>Require PR, require status checks (CI Lint), no force push</td>
+</tr>
+<tr>
+<td><code>develop</code></td>
+<td>Require PR, require status checks (CI Lint)</td>
+</tr>
+<tr>
+<td><code>release/*</code></td>
+<td>Require PR from develop only</td>
+</tr>
+</tbody>
+</table></div>
+<hr />
+<h3 id="cicd-connection-configuration-how-it-works">15.4 CI/CD
+Connection Configuration (How It Works)</h3>
+<p>In GitHub Actions, there is no
+<code>~/.snowflake/connections.toml</code>. The deploy workflows create
+credentials at runtime:</p>
+<pre><code>SNOWFLAKE_ACCOUNT + SNOWFLAKE_USER + SNOWFLAKE_PRIVATE_KEY
+                          │
+                          ▼
+         Write private key to ~/.snowflake/ci_key.p8
+                          │
+                          ▼
+         scripts/deploy_schemachange.sh
+                          │
+                          ▼
+         schemachange deploy --root-folder banking/
+           --snowflake-account &lt;ACCOUNT&gt;
+           --snowflake-user &lt;USER&gt;
+           --snowflake-private-key-path ~/.snowflake/ci_key.p8
+           --snowflake-database &lt;DB from environments.yml&gt;
+           --change-history-table &lt;DB&gt;.METADATA.SCHEMACHANGE_HISTORY</code></pre>
+<hr />
+<h3 id="end-to-end-verification-checklist">15.5 End-to-End Verification
+Checklist</h3>
+<pre class="bash"><code># 1. Verify Snowflake connection
+snow sql -c MY_TRIAL_ACCOUNT -q &quot;SELECT 1 AS connected&quot;
+
+# 2. Verify warehouse exists
+snow sql -c MY_TRIAL_ACCOUNT -q &quot;SHOW WAREHOUSES LIKE &#39;COMPUTE_WH&#39;&quot;
+
+# 3. Deploy to dev with schemachange
+bash scripts/deploy_schemachange.sh --env=dev
+
+# 4. Run smoke tests
+bash scripts/run_smoke_tests.sh --env=dev
+
+# 5. Load historical data
+bash scripts/run_historical.sh --env=dev
+
+# 6. Run incremental data
+bash scripts/run_incremental.sh
+
+# 7. Verify ETL results
+snow sql -c MY_TRIAL_ACCOUNT -q &quot;
+  SELECT &#39;T_Customer&#39; AS tbl, COUNT(*) AS rows FROM FINANCE_CORE_DEV.RAW.T_CUSTOMER
+  UNION ALL
+  SELECT &#39;DimCustomer&#39;, COUNT(*) FROM FINANCE_CORE_DEV.CLEAN.DIMCUSTOMER
+  UNION ALL
+  SELECT &#39;FactDailyTransaction&#39;, COUNT(*) FROM FINANCE_CORE_DEV.CONFORMED.FACTDAILYTRANSACTION;
+&quot;
+
+# 8. Run lint
+sqlfluff lint banking/ --dialect snowflake --config .sqlfluff
+
+# 9. Verify GitHub secrets (requires gh CLI authenticated)
+gh secret list
+
+# 10. Trigger a CI run
+git checkout -b test/verify-pipeline
+git commit --allow-empty -m &quot;test: verify CI pipeline&quot;
+git push -u origin test/verify-pipeline
+gh pr create --base develop --title &quot;Test: verify CI pipeline&quot; --body &quot;Testing CI&quot;</code></pre>
+<hr />
+<h3 id="configuration-reference-summary">15.6 Configuration Reference
+Summary</h3>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 42%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th>Component</th>
+<th>File/Location</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Snowflake connection</td>
+<td><code>~/.snowflake/connections.toml</code></td>
+<td>Local CLI authentication</td>
+</tr>
+<tr>
+<td>RSA private key</td>
+<td><code>~/.snowflake/trial_key.p8</code></td>
+<td>Key-pair auth credential</td>
+</tr>
+<tr>
+<td>RSA public key</td>
+<td>Registered on Snowflake user</td>
+<td>Validates JWT tokens</td>
+</tr>
+<tr>
+<td>Environment config</td>
+<td><code>environments.yml</code></td>
+<td>Database/warehouse/connection per env</td>
+</tr>
+<tr>
+<td>Schemachange config</td>
+<td><code>schemachange-config.yml</code></td>
+<td>Migration tool settings</td>
+</tr>
+<tr>
+<td>GitHub secrets</td>
+<td>Repository Settings</td>
+<td>CI/CD authentication</td>
+</tr>
+<tr>
+<td>Lint config</td>
+<td><code>.sqlfluff</code></td>
+<td>SQL formatting rules</td>
+</tr>
+<tr>
+<td>Migration scripts</td>
+<td><code>banking/</code></td>
+<td>Versioned SQL migrations</td>
+</tr>
+<tr>
+<td>CI workflows</td>
+<td><code>.github/workflows/*.yml</code></td>
+<td>Pipeline definitions</td>
+</tr>
+<tr>
+<td>Deploy script</td>
+<td><code>scripts/deploy_schemachange.sh</code></td>
+<td>Schemachange deployment orchestrator</td>
+</tr>
+</tbody>
+</table></div>
+
+  <footer>
+    Generated by Cortex Code &bull; Snowflake Migration Project &bull; DevOps Operations Manual
+  </footer>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>
