@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>DevOps Operations Manual</title>
+  <script type="application/json" id="snowflake-report-metadata">
+  {
+    "generated": "2026-08-20",
+    "intent": "DevOps Operations Manual for Finance Data Platform (Teradata-to-Snowflake migration)",
+    "sections": [
+      { "id": "architecture", "title": "Architecture Overview", "producerNotes": "Describes FINANCE_CORE_DEV/PROD DB layout with schema-isolated environments" },
+      { "id": "project-structure", "title": "Project Structure", "producerNotes": "Banking folder layout with RAW/CLEAN/CONFORMED/GOVERNANCE layers" },
+      { "id": "cicd", "title": "CI/CD Pipeline", "producerNotes": "GitHub Actions workflow triggers and branching strategy" },
+      { "id": "deployment", "title": "Deployment Procedures", "producerNotes": "Schemachange-based deployment and release process" },
+      { "id": "environments", "title": "Environment Management", "producerNotes": "environments.yml configuration and provisioning" }
+    ]
+  }
+  </script>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+      max-width: 960px; width: 100%;
+      margin: 0 auto; padding: clamp(16px, 4vw, 32px);
+      color: light-dark(#1f2937, #e5e7eb);
+      background: light-dark(#ffffff, #0f172a);
+      line-height: 1.6;
+    }
+    h1 { color: light-dark(#0f172a, #f1f5f9); font-size: 2rem; border-bottom: 3px solid light-dark(#2563eb, #3b82f6); padding-bottom: 8px; }
+    h2 { color: light-dark(#1e40af, #60a5fa); font-size: 1.4rem; margin-top: 2.5rem; border-bottom: 1px solid light-dark(#e5e7eb, #374151); padding-bottom: 4px; }
+    h3 { color: light-dark(#374151, #94a3b8); font-size: 1.1rem; margin-top: 1.5rem; }
+    a { color: light-dark(#2563eb, #60a5fa); }
+    code { background: light-dark(#f3f4f6, #1e293b); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+    pre { background: light-dark(#1e293b, #0f172a); color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 0.85em; line-height: 1.5; border: 1px solid light-dark(#334155, #1e293b); }
+    pre code { background: none; padding: 0; }
+    .table-wrap { overflow-x: auto; margin: 16px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+    th, td { border: 1px solid light-dark(#d1d5db, #374151); padding: 8px 12px; text-align: left; }
+    th { background: light-dark(#f3f4f6, #1e293b); font-weight: 600; }
+    tr:nth-child(even) { background: light-dark(#f9fafb, #111827); }
+    .banner { background: linear-gradient(135deg, light-dark(#1e40af, #0f2027) 0%, light-dark(#3b82f6, #2c5364) 100%); color: #fff; padding: 24px 32px; border-radius: 12px; margin-bottom: 32px; }
+    .banner h1 { color: #fff; border: none; margin: 0; padding: 0; }
+    .banner p { color: #cbd5e1; margin: 4px 0 0; font-size: 0.95rem; }
+    .toc { background: light-dark(#f8fafc, #1e293b); border: 1px solid light-dark(#e2e8f0, #334155); border-radius: 8px; padding: 16px 24px; margin-bottom: 32px; }
+    .toc h3 { margin-top: 0; }
+    .toc ul { padding-left: 20px; margin: 8px 0; }
+    .toc li { margin: 4px 0; }
+    .toc a { text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .diagram { background: light-dark(#0f172a, #020617); color: #67e8f9; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 0.8em; line-height: 1.4; white-space: pre; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: 600; }
+    .badge-v { background: #2563eb; color: #fff; }
+    .badge-r { background: #059669; color: #fff; }
+    .badge-a { background: #d97706; color: #fff; }
+    blockquote { border-left: 4px solid light-dark(#3b82f6, #60a5fa); margin: 16px 0; padding: 8px 16px; background: light-dark(#eff6ff, #1e293b); border-radius: 0 4px 4px 0; }
+    img, svg { max-width: 100%; height: auto; }
+    .footer { text-align: center; color: light-dark(#6b7280, #64748b); font-size: 0.8rem; margin-top: 48px; padding-top: 16px; border-top: 1px solid light-dark(#e5e7eb, #334155); }
+  </style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>DevOps Operations Manual</h1>
+  <p>Finance Data Platform &mdash; Teradata-to-Snowflake Migration</p>
+</div>
+
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ul>
+    <li><a href="#architecture">1. Architecture Overview</a></li>
+    <li><a href="#project-structure">2. Project Structure</a></li>
+    <li><a href="#cicd">3. CI/CD Pipeline</a></li>
+    <li><a href="#secrets">4. Secrets Management</a></li>
+    <li><a href="#deployment">5. Deployment Procedures</a></li>
+    <li><a href="#rollback">6. Rollback Procedures</a></li>
+    <li><a href="#environments">7. Environment Management</a></li>
+    <li><a href="#monitoring">8. Monitoring &amp; Alerting</a></li>
+    <li><a href="#incident">9. Incident Response</a></li>
+    <li><a href="#maintenance">10. Maintenance</a></li>
+    <li><a href="#access">11. Access Control</a></li>
+    <li><a href="#linting">12. Linting &amp; Code Quality</a></li>
+    <li><a href="#disaster-recovery">13. Disaster Recovery</a></li>
+  </ul>
+</div>
+
+<h2 id="architecture">1. Architecture Overview</h2>
+
+<div class="diagram">&#9484;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9488;
+&#9474;                        GitHub Repository                                &#9474;
+&#9500;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9508;
+&#9474; feature/* &#9472;PR&#9472;&#9658; develop &#9472;PR&#9472;&#9658; release/* &#9472;PR&#9472;&#9658; main &#9472;tag&#9472;&#9658; v*     &#9474;
+&#9474;     &#9474;              &#9474;              &#9474;             &#9474;           &#9474;      &#9474;
+&#9474;     &#9660;              &#9660;              &#9660;             &#9660;           &#9660;      &#9474;
+&#9474; CI Lint       Deploy DEV     Deploy QA   Deploy PreProd  Deploy Prod  &#9474;
+&#9492;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9496;</div>
+
+<h3>Snowflake Environment Layout</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Database</th><th>Purpose</th><th>Schemas</th></tr></thead>
+  <tbody>
+    <tr><td><code>FINANCE_CORE_DEV</code></td><td>All non-prod (dev, qa, preprod) &mdash; schema-isolated</td><td>RAW_DEV, CLEAN_DEV, CONFORMED_DEV, GOVERNANCE_DEV<br>RAW_QA, CLEAN_QA, CONFORMED_QA, GOVERNANCE_QA<br>RAW_PREPROD, CLEAN_PREPROD, CONFORMED_PREPROD, GOVERNANCE_PREPROD</td></tr>
+    <tr><td><code>FINANCE_CORE_PROD</code></td><td>Production</td><td>RAW_PROD, CLEAN_PROD, CONFORMED_PROD, GOVERNANCE_PROD</td></tr>
+  </tbody>
+</table>
+</div>
+<p><strong>Warehouse:</strong> <code>COMPUTE_WH</code> (shared, X-Small)</p>
+
+<h2 id="project-structure">2. Project Structure</h2>
+
+<pre><code>banking/
+&#9500;&#9472;&#9472; _platform/
+&#9474;   &#9492;&#9472;&#9472; V1.000.100__setup_schemas.sql           # RAW, CLEAN, CONFORMED, GOVERNANCE
+&#9500;&#9472;&#9472; raw/retail/
+&#9474;   &#9492;&#9472;&#9472; V1.050.100__create_raw_tables.sql       # T_CUSTOMER, T_ACCOUNT, T_TRANSACTION
+&#9500;&#9472;&#9472; clean/retail/
+&#9474;   &#9500;&#9472;&#9472; V1.050.200__create_clean_tables.sql     # DIMCUSTOMER, DIMACCOUNT, etc.
+&#9474;   &#9492;&#9472;&#9472; R__retail_clean_procedures.sql          # SCD-2, SCD-1 procedures
+&#9500;&#9472;&#9472; conformed/retail/
+&#9474;   &#9500;&#9472;&#9472; V1.050.300__create_conformed_tables.sql # FACTDAILYTRANSACTION, FACTDAILYAGG
+&#9474;   &#9500;&#9472;&#9472; R__retail_procedures.sql                # Conformed ETL procedures
+&#9474;   &#9492;&#9472;&#9472; R__retail_views.sql                     # Conformed views
+&#9500;&#9472;&#9472; orchestration/
+&#9474;   &#9500;&#9472;&#9472; R__orchestration.sql                    # Daily_ETL_Run() orchestrator
+&#9474;   &#9492;&#9472;&#9472; R__ingestion_tasks.sql                  # Ingestion task definitions
+&#9500;&#9472;&#9472; reference/
+&#9474;   &#9500;&#9472;&#9472; R__seed_data.sql                        # Seed/reference data
+&#9474;   &#9492;&#9472;&#9472; R__iceberg_objects.sql                  # Iceberg/Parquet objects
+&#9492;&#9472;&#9472; governance/
+    &#9500;&#9472;&#9472; V1.900.100__create_masking_policies.sql # Masking policy setup
+    &#9500;&#9472;&#9472; V1.900.101__create_data_quality.sql     # DATA_QUALITY_LOG
+    &#9500;&#9472;&#9472; R__masking_policies.sql                 # Policy definitions
+    &#9500;&#9472;&#9472; R__data_quality_procedures.sql          # DQ procedures
+    &#9492;&#9472;&#9472; A__grants.sql                           # Always-run grants</code></pre>
+
+<h3>Schemachange Naming Conventions</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Prefix</th><th>Meaning</th><th>Behavior</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-v">V</span></td><td>Versioned migration</td><td>Runs once, tracked in change history</td></tr>
+    <tr><td><span class="badge badge-r">R</span></td><td>Repeatable migration</td><td>Re-runs if file content changes</td></tr>
+    <tr><td><span class="badge badge-a">A</span></td><td>Always-run migration</td><td>Runs on every deployment</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Schemachange Configuration</h3>
+<pre><code>root-folder: banking
+vars:
+  database: "FINANCE_CORE_DEV"
+  warehouse: "COMPUTE_WH"
+  role: "SYSADMIN"
+  environment: "dev"
+  schema_suffix: "_DEV"
+  raw_schema: "RAW_DEV"
+  clean_schema: "CLEAN_DEV"
+  conformed_schema: "CONFORMED_DEV"
+  governance_schema: "GOVERNANCE_DEV"
+
+create-change-history-table: true
+change-history-table: "FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY_DEV"</code></pre>
+
+<h2 id="cicd">3. CI/CD Pipeline</h2>
+
+<h3>Workflow Files</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>File</th><th>Purpose</th><th>Trigger</th></tr></thead>
+  <tbody>
+    <tr><td><code>ci.yml</code></td><td>Lint + validate</td><td>Push to <code>feature/*</code>, PR to <code>develop</code>, <code>release/*</code>, <code>main</code></td></tr>
+    <tr><td><code>deploy-dev.yml</code></td><td>Deploy + smoke test DEV</td><td>Push to <code>develop</code></td></tr>
+    <tr><td><code>deploy-qa.yml</code></td><td>Deploy + test QA</td><td>Push to <code>release/*</code></td></tr>
+    <tr><td><code>deploy-preprod.yml</code></td><td>Deploy + test PreProd</td><td>Push to <code>main</code></td></tr>
+    <tr><td><code>deploy-prod.yml</code></td><td>Deploy + validate Prod</td><td>Tag <code>v*</code> or manual dispatch</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Branching Strategy</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Branch</th><th>Trigger</th><th>Pipeline Action</th></tr></thead>
+  <tbody>
+    <tr><td><code>feature/*</code></td><td>Push</td><td>CI lint &amp; validate</td></tr>
+    <tr><td><code>feature/*</code> &rarr; <code>develop</code></td><td>PR</td><td>CI lint &amp; validate</td></tr>
+    <tr><td><code>develop</code></td><td>Push (merge)</td><td>Deploy to DEV</td></tr>
+    <tr><td><code>release/*</code></td><td>Push (merge)</td><td>Deploy to QA + tests</td></tr>
+    <tr><td><code>main</code></td><td>Push (merge)</td><td>Deploy to Pre-PROD + regression</td></tr>
+    <tr><td>Tag <code>v*</code> on <code>main</code></td><td>Tag push</td><td>Deploy to PROD + validation</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Pipeline Stages</h3>
+<div class="diagram">SQL Lint (sqlfluff) &#9658; Deploy (schemachange) &#9658; Smoke Tests &#9658; Integration Tests</div>
+
+<h2 id="secrets">4. Secrets Management</h2>
+
+<h3>Required GitHub Secrets</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Secret</th><th>Used By</th></tr></thead>
+  <tbody>
+    <tr><td><code>SNOWFLAKE_ACCOUNT</code></td><td>deploy-qa, deploy-preprod</td></tr>
+    <tr><td><code>SNOWFLAKE_USER</code></td><td>deploy-qa, deploy-preprod</td></tr>
+    <tr><td><code>SNOWFLAKE_PRIVATE_KEY</code></td><td>deploy-qa, deploy-preprod</td></tr>
+    <tr><td><code>SNOWFLAKE_PROD_ACCOUNT</code></td><td>deploy-prod</td></tr>
+    <tr><td><code>SNOWFLAKE_PROD_USER</code></td><td>deploy-prod</td></tr>
+    <tr><td><code>SNOWFLAKE_PROD_PRIVATE_KEY</code></td><td>deploy-prod</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Key Rotation</h3>
+<pre><code># Generate new key pair
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out new_key.p8 -nocrypt
+openssl rsa -in new_key.p8 -pubout -out new_key.pub
+
+# Register in Snowflake (zero-downtime rotation)
+ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY_2='&lt;new-public-key&gt;';
+
+# After CI validates, swap keys:
+ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY='&lt;new-public-key&gt;';
+ALTER USER SOMSUJAY UNSET RSA_PUBLIC_KEY_2;</code></pre>
+
+<h2 id="deployment">5. Deployment Procedures</h2>
+
+<h3>Standard Deployment</h3>
+<pre><code># Deploy to dev (local)
+bash scripts/deploy_schemachange.sh --env=dev
+
+# Deploy to QA
+bash scripts/deploy_schemachange.sh --env=qa
+
+# Dry-run (no changes)
+bash scripts/deploy_schemachange.sh --env=prod --dry-run</code></pre>
+
+<h3>Standard Release (QA &rarr; PreProd &rarr; Prod)</h3>
+<pre><code># 1. Create release branch
+git checkout develop && git pull
+git checkout -b release/v1.3.0
+
+# 2. Push triggers deploy-qa.yml
+git push -u origin release/v1.3.0
+
+# 3. Merge to main (triggers deploy-preprod.yml)
+gh pr create --base main --title "Release v1.3.0"
+gh pr merge &lt;pr-number&gt; --merge
+
+# 4. Tag for production (triggers deploy-prod.yml)
+git checkout main && git pull
+git tag v1.3.0
+git push origin v1.3.0</code></pre>
+
+<h3>Available Jinja Variables</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Variable</th><th>Example Value</th></tr></thead>
+  <tbody>
+    <tr><td><code>{{ database }}</code></td><td>FINANCE_CORE_DEV</td></tr>
+    <tr><td><code>{{ warehouse }}</code></td><td>COMPUTE_WH</td></tr>
+    <tr><td><code>{{ role }}</code></td><td>SYSADMIN</td></tr>
+    <tr><td><code>{{ environment }}</code></td><td>dev</td></tr>
+    <tr><td><code>{{ schema_suffix }}</code></td><td>_DEV</td></tr>
+    <tr><td><code>{{ raw_schema }}</code></td><td>RAW_DEV</td></tr>
+    <tr><td><code>{{ clean_schema }}</code></td><td>CLEAN_DEV</td></tr>
+    <tr><td><code>{{ conformed_schema }}</code></td><td>CONFORMED_DEV</td></tr>
+    <tr><td><code>{{ governance_schema }}</code></td><td>GOVERNANCE_DEV</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="rollback">6. Rollback Procedures</h2>
+
+<h3>Automated (Production)</h3>
+<pre><code>gh workflow run deploy-prod.yml \
+  -f action=rollback \
+  -f rollback_version=v1.2.0</code></pre>
+
+<h3>Strategy Options</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Method</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Fix-forward</td><td>Create a new <code>V&lt;next&gt;__revert_&lt;change&gt;.sql</code> migration</td></tr>
+    <tr><td>Manual revert</td><td>Drop/alter objects, update change history table</td></tr>
+    <tr><td>Full redeploy</td><td>Drop database, recreate, run schemachange from scratch</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="environments">7. Environment Management</h2>
+
+<h3>environments.yml (Single Source of Truth)</h3>
+<pre><code>dev:
+  database: FINANCE_CORE_DEV
+  schema_suffix: _DEV
+  raw_schema: RAW_DEV
+  clean_schema: CLEAN_DEV
+  conformed_schema: CONFORMED_DEV
+  governance_schema: GOVERNANCE_DEV
+  warehouse: COMPUTE_WH
+  connection: MY_TRIAL_ACCOUNT
+
+qa:
+  database: FINANCE_CORE_DEV
+  raw_schema: RAW_QA / CLEAN_QA / CONFORMED_QA / GOVERNANCE_QA
+
+preprod:
+  database: FINANCE_CORE_DEV
+  raw_schema: RAW_PREPROD / CLEAN_PREPROD / CONFORMED_PREPROD / GOVERNANCE_PREPROD
+
+prod:
+  database: FINANCE_CORE_PROD
+  raw_schema: RAW_PROD / CLEAN_PROD / CONFORMED_PROD / GOVERNANCE_PROD</code></pre>
+
+<h2 id="monitoring">8. Monitoring &amp; Alerting</h2>
+
+<h3>Health Checks</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Check</th><th>Validates</th></tr></thead>
+  <tbody>
+    <tr><td>Schema existence</td><td>RAW, CLEAN, CONFORMED, GOVERNANCE schemas</td></tr>
+    <tr><td>Object existence</td><td>All tables, views, stages, tasks</td></tr>
+    <tr><td>Object counts</td><td>Minimum expected objects per schema</td></tr>
+    <tr><td>Procedure availability</td><td>All ETL procedures callable</td></tr>
+    <tr><td>Masking policies</td><td>Governance policies deployed</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Manual Health Check</h3>
+<pre><code>snow sql -c MY_TRIAL_ACCOUNT -q "
+  SELECT TABLE_SCHEMA, COUNT(*) AS object_count
+  FROM FINANCE_CORE_DEV.INFORMATION_SCHEMA.TABLES
+  GROUP BY TABLE_SCHEMA
+  ORDER BY TABLE_SCHEMA;
+"</code></pre>
+
+<h2 id="incident">9. Incident Response</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Level</th><th>Definition</th><th>Response Time</th></tr></thead>
+  <tbody>
+    <tr><td><strong>SEV1</strong></td><td>Production data loss or corruption</td><td>Immediate</td></tr>
+    <tr><td><strong>SEV2</strong></td><td>Production pipeline broken</td><td>30 minutes</td></tr>
+    <tr><td><strong>SEV3</strong></td><td>Non-prod broken or degraded</td><td>4 hours</td></tr>
+    <tr><td><strong>SEV4</strong></td><td>Cosmetic or documentation</td><td>Next sprint</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>SEV1/SEV2 Playbook</h3>
+<pre><code>1. ASSESS    - Check GitHub Actions logs + Snowflake query history
+2. CONTAIN   - Suspend tasks: ALTER TASK RAW_DEV.TASK_LOAD_* SUSPEND;
+3. ROLLBACK  - gh workflow run deploy-prod.yml -f action=rollback -f rollback_version=&lt;tag&gt;
+4. VALIDATE  - bash scripts/run_smoke_tests.sh --env=prod
+5. COMMUNICATE - Post incident summary, create follow-up ticket</code></pre>
+
+<h2 id="maintenance">10. Maintenance</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Task</th><th>Frequency</th></tr></thead>
+  <tbody>
+    <tr><td>Key rotation</td><td>Every 90 days</td></tr>
+    <tr><td>Review query history</td><td>Weekly</td></tr>
+    <tr><td>Warehouse sizing</td><td>Monthly</td></tr>
+    <tr><td>Stale data check</td><td>Daily (automated)</td></tr>
+    <tr><td>GitHub Actions cleanup</td><td>Monthly</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="access">11. Access Control</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Role</th><th>Access</th><th>Usage</th></tr></thead>
+  <tbody>
+    <tr><td><code>ACCOUNTADMIN</code></td><td>Full access</td><td>Deployments, DDL, grants</td></tr>
+    <tr><td><code>SYSADMIN</code></td><td>Database management</td><td>Object creation (schemachange default)</td></tr>
+    <tr><td><code>DEPLOY_ROLE</code></td><td>Target database(s)</td><td>CI/CD deployments</td></tr>
+    <tr><td><code>READER_ROLE</code></td><td>Read-only on conformed</td><td>Dashboards, reporting</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="linting">12. Linting &amp; Code Quality</h2>
+
+<pre><code># Check for issues
+sqlfluff lint banking/ --dialect snowflake --config .sqlfluff
+
+# Auto-fix issues
+sqlfluff fix banking/ --dialect snowflake --config .sqlfluff --force</code></pre>
+
+<h2 id="disaster-recovery">13. Disaster Recovery</h2>
+
+<h3>Snowflake Time Travel</h3>
+<pre><code>-- Query data as of 1 hour ago
+SELECT * FROM RAW_DEV.T_CUSTOMER AT(OFFSET =&gt; -3600);
+
+-- Restore a dropped table
+UNDROP TABLE CLEAN_DEV.DIMCUSTOMER;
+
+-- Clone from point in time
+CREATE TABLE CLEAN_DEV.DIMCUSTOMER_BACKUP CLONE CLEAN_DEV.DIMCUSTOMER
+  AT(TIMESTAMP =&gt; '2026-07-15 10:00:00'::TIMESTAMP);</code></pre>
+
+<h3>Full Environment Recovery</h3>
+<pre><code># 1. Recreate database
+snow sql -c MY_TRIAL_ACCOUNT -q "CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;"
+
+# 2. Redeploy all migrations
+git checkout $(git describe --tags --abbrev=0)
+bash scripts/deploy_schemachange.sh --env=prod
+
+# 3. Reload data
+bash scripts/run_historical.sh
+bash scripts/run_incremental.sh</code></pre>
+
+<div class="footer">
+  DevOps Operations Manual &bull; Finance Data Platform &bull; Powered by Snowflake
+</div>
+
+</body>
+</html>

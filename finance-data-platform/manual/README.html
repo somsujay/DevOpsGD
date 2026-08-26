@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>Teradata to Snowflake Migration</title>
+  <script src="/libs/highlight.js@11.10.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/libs/highlight.js@11.10.0/github.min.css" />
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      max-width: 920px; width: 100%; margin: 0 auto;
+      padding: clamp(16px, 4vw, 32px);
+      color: light-dark(#1e293b, #e2e8f0);
+      background: light-dark(#ffffff, #0f172a);
+      line-height: 1.7;
+    }
+    h1 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      color: light-dark(#0f172a, #f8fafc);
+      border-bottom: 3px solid light-dark(#29b5e8, #38bdf8);
+      padding-bottom: 12px;
+      margin-bottom: 8px;
+    }
+    h2 {
+      font-size: clamp(1.2rem, 3vw, 1.5rem);
+      color: light-dark(#1e40af, #93c5fd);
+      margin-top: 2.5rem;
+      border-bottom: 1px solid light-dark(#e2e8f0, #334155);
+      padding-bottom: 6px;
+    }
+    h3 {
+      font-size: 1.1rem;
+      color: light-dark(#334155, #cbd5e1);
+      margin-top: 1.8rem;
+    }
+    h4 { color: light-dark(#475569, #94a3b8); margin-top: 1.4rem; }
+    a { color: light-dark(#2563eb, #60a5fa); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code {
+      font-family: "SF Mono", "Fira Code", "JetBrains Mono", Consolas, monospace;
+      font-size: 0.88em;
+      background: light-dark(#f1f5f9, #1e293b);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid light-dark(#e2e8f0, #334155);
+    }
+    pre {
+      background: light-dark(#f8fafc, #1e293b);
+      border: 1px solid light-dark(#e2e8f0, #334155);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 0.85em;
+    }
+    table { border-collapse: collapse; width: 100%; margin: 16px 0; }
+    th, td {
+      border: 1px solid light-dark(#cbd5e1, #475569);
+      padding: 8px 12px;
+      text-align: left;
+      font-size: 0.9em;
+    }
+    th {
+      background: light-dark(#f1f5f9, #1e293b);
+      font-weight: 600;
+      color: light-dark(#1e293b, #e2e8f0);
+    }
+    tr:nth-child(even) { background: light-dark(#f8fafc, #0f172a); }
+    .table-wrap { overflow-x: auto; margin: 16px 0; }
+    img, svg { max-width: 100%; height: auto; }
+    blockquote {
+      border-left: 4px solid light-dark(#29b5e8, #38bdf8);
+      margin: 16px 0;
+      padding: 8px 16px;
+      background: light-dark(#f0f9ff, #0c1a2e);
+      border-radius: 0 8px 8px 0;
+    }
+    blockquote p { margin: 8px 0; }
+    nav#TOC {
+      background: light-dark(#f8fafc, #1e293b);
+      border: 1px solid light-dark(#e2e8f0, #334155);
+      border-radius: 8px;
+      padding: 16px 24px;
+      margin-bottom: 32px;
+    }
+    nav#TOC > ul { padding-left: 0; list-style: none; }
+    nav#TOC ul { padding-left: 20px; }
+    nav#TOC li { margin: 4px 0; }
+    nav#TOC a { color: light-dark(#475569, #94a3b8); font-size: 0.9em; }
+    nav#TOC a:hover { color: light-dark(#2563eb, #60a5fa); }
+    .header-bar {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 4px;
+    }
+    .snowflake-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: light-dark(#eff6ff, #1e3a5f);
+      color: light-dark(#1e40af, #93c5fd);
+      font-size: 0.75rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1px solid light-dark(#bfdbfe, #1e40af);
+    }
+    .subtitle {
+      color: light-dark(#64748b, #94a3b8);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+    }
+    footer {
+      margin-top: 48px;
+      padding-top: 16px;
+      border-top: 1px solid light-dark(#e2e8f0, #334155);
+      color: light-dark(#94a3b8, #64748b);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      body { padding: 12px; }
+      table { font-size: 0.8em; }
+      th, td { padding: 6px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-bar">
+    <span class="snowflake-badge">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.09 3.26L16 4l-1.64 2.73L18 8l-3.26 1.09L16 12l-2.73-1.64L12 14l-1.27-3.64L8 12l1.26-2.91L6 8l3.64-1.27L8 4l2.91 1.26z"/></svg>
+      Snowflake Migration
+    </span>
+  </div>
+  <p class="subtitle">Finance Data Platform &mdash; Teradata to Snowflake</p>
+<h1 id="teradata-to-snowflake-migration">Teradata to Snowflake
+Migration</h1>
+<p>Converts a Teradata DWH ETL pipeline into Snowflake using a
+<strong>Medallion Architecture</strong> (Bronze / Silver / Gold) with
+two ingestion options: CSV files or Iceberg/Parquet files. Deployments
+are managed via <strong>schemachange</strong> with CI/CD through GitHub
+Actions.</p>
+<h2 id="architecture">Architecture</h2>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│  Source Data                                            │
+│  ┌───────────────┐        ┌───────────────────────┐    │
+│  │  CSV Files    │        │  Iceberg/Parquet Files │    │
+│  │  (sample_data │        │  (iceberg_warehouse/)  │    │
+│  │   _file/)     │        │                        │    │
+│  └───────┬───────┘        └───────────┬───────────┘    │
+└──────────┼────────────────────────────┼────────────────┘
+           │                            │
+           ▼                            ▼
+┌──────────────────┐       ┌────────────────────────┐
+│ @BRONZE.DATA_    │       │ @BRONZE.ICEBERG_STAGE  │
+│  STAGE (CSV)     │       │   (Parquet)            │
+│  + Tasks + Stream│       │   + COPY INTO          │
+└────────┬─────────┘       └───────────┬────────────┘
+         │                             │
+         └──────────────┬──────────────┘
+                        ▼
+              ┌─────────────────┐
+              │   BRONZE Layer  │  Raw staging tables
+              │   T_Customer    │
+              │   T_Account     │
+              │   T_Transaction │
+              └────────┬────────┘
+                       ▼
+              ┌─────────────────┐
+              │   SILVER Layer  │  Cleansed dimensions
+              │   DimCustomer   │  (SCD-2)
+              │   DimAccount    │  (SCD-1)
+              │   DimTxnType    │
+              │   DimDate       │
+              └────────┬────────┘
+                       ▼
+              ┌─────────────────┐
+              │   GOLD Layer    │  Business-ready facts
+              │   FactDaily     │
+              │   Transaction   │
+              │   FactDailyAgg  │
+              └─────────────────┘</code></pre>
+<h2 id="prerequisites">Prerequisites</h2>
+<ul>
+<li><a
+href="https://docs.snowflake.com/en/developer-guide/snowflake-cli">Snowflake
+CLI</a> (<code>snow</code>) installed and configured</li>
+<li>Connection <code>MY_TRIAL_ACCOUNT</code> configured in
+<code>~/.snowflake/connections.toml</code></li>
+<li>Python 3.11+ (for schemachange, Iceberg table creation, and
+Streamlit dashboard)</li>
+<li><a
+href="https://github.com/Snowflake-Labs/schemachange">schemachange</a>
+(<code>pip install schemachange</code>)</li>
+<li><a href="https://sqlfluff.com/">sqlfluff</a>
+(<code>pip install sqlfluff</code>) for SQL linting</li>
+</ul>
+<h2 id="quick-start">Quick Start</h2>
+<h3 id="deploy-snowflake-objects-via-schemachange">1. Deploy Snowflake
+Objects (via Schemachange)</h3>
+<pre class="bash"><code># Set required environment variables
+export SNOWFLAKE_ACCOUNT=KXAXARZ-GW22129
+export SNOWFLAKE_USER=SOMSUJAY
+
+# Deploy to dev
+bash scripts/deploy_schemachange.sh --env=dev
+
+# Dry-run (see what would be deployed without executing)
+bash scripts/deploy_schemachange.sh --env=dev --dry-run</code></pre>
+<h3 id="run-smoke-tests">2. Run Smoke Tests</h3>
+<pre class="bash"><code>bash scripts/run_smoke_tests.sh --env=dev</code></pre>
+<h3 id="run-the-etl-pipeline">3. Run the ETL Pipeline</h3>
+<p><strong>Option A: CSV Source (default)</strong></p>
+<pre class="bash"><code>bash scripts/run_historical.sh --source=csv
+bash scripts/run_incremental.sh --source=csv</code></pre>
+<p><strong>Option B: Iceberg/Parquet Source</strong></p>
+<p>First generate the local Iceberg tables (if not already present):</p>
+<pre class="bash"><code>pip install pyiceberg pyarrow
+python scripts/create_iceberg_tables.py</code></pre>
+<p>Then run the pipeline from Parquet:</p>
+<pre class="bash"><code>bash scripts/run_historical.sh --source=iceberg
+bash scripts/run_incremental.sh --source=iceberg</code></pre>
+<p><strong>End-to-End (historical + incremental +
+dashboard)</strong></p>
+<pre class="bash"><code>bash scripts/run_etl_end_to_end.sh                  # CSV (default)
+bash scripts/run_etl_end_to_end.sh --source=iceberg # Iceberg/Parquet</code></pre>
+<h3 id="launch-dashboard">4. Launch Dashboard</h3>
+<pre class="bash"><code>bash scripts/streamlit_start.sh
+# Dashboard available at http://localhost:8501
+
+bash scripts/streamlit_stop.sh</code></pre>
+<h3 id="tear-down">5. Tear Down</h3>
+<pre class="bash"><code>bash scripts/drop_objects.sh           # dry-run (shows what will be dropped)
+bash scripts/drop_objects.sh --confirm # actually drops everything</code></pre>
+<h2 id="project-structure">Project Structure</h2>
+<pre><code>├── banking/                       # Schemachange migration root
+│   ├── _platform/
+│   │   └── V1.0.0__setup_schemas.sql
+│   ├── bronze/retail/
+│   │   └── V1.1.0__bronze_tables.sql
+│   ├── silver/retail/
+│   │   ├── V1.2.0__silver_tables.sql
+│   │   └── V1.4.0__silver_procedures.sql
+│   ├── gold/retail/
+│   │   ├── V1.3.0__gold_tables.sql
+│   │   ├── V1.5.0__gold_procedures.sql
+│   │   └── R__gold_views.sql
+│   ├── orchestration/
+│   │   ├── V1.6.0__orchestration.sql
+│   │   └── V1.7.1__ingestion_tasks.sql
+│   ├── reference/
+│   │   ├── V1.7.0__seed_data.sql
+│   │   └── V1.10.0__iceberg_objects.sql
+│   └── governance/
+│       ├── V1.8.0__masking_policies.sql
+│       ├── V1.9.0__data_quality.sql
+│       └── A__grants.sql
+├── scripts/                       # Deployment &amp; ETL automation
+│   ├── deploy_schemachange.sh     # Primary deployer (schemachange)
+│   ├── deploy.sh                  # Legacy deployer
+│   ├── rollback.sh
+│   ├── run_smoke_tests.sh
+│   ├── run_historical.sh
+│   ├── run_incremental.sh
+│   ├── run_etl_end_to_end.sh
+│   ├── create_objects.sh
+│   ├── drop_objects.sh
+│   ├── create_iceberg_tables.py
+│   ├── streamlit_start.sh
+│   └── streamlit_stop.sh
+├── tests/
+│   ├── smoke_test.sql             # Post-deploy object checks
+│   └── integration_test.sql       # Deep validation
+├── .github/workflows/             # CI/CD pipelines
+│   ├── ci.yml                     # Lint + validate on PRs
+│   ├── deploy-qa.yml              # Deploy on push to release/*
+│   ├── deploy-preprod.yml         # Deploy on push to main
+│   └── deploy-prod.yml            # Deploy on tag v* or manual
+├── Teradata_Scripts/              # Original Teradata source SQL
+├── sample_data_file/              # CSV source data (history + incremental)
+├── iceberg_warehouse/             # Local Iceberg tables (Parquet + metadata)
+├── streamlit_app/                 # Multi-page Streamlit dashboard
+├── config/                        # Snowflake Git integration config
+├── environments.yml               # Environment config (dev/qa/preprod/prod)
+├── schemachange-config.yml        # Schemachange settings
+├── .sqlfluff                      # SQL lint rules
+└── DEVOPS_MANUAL.md               # Full operations manual</code></pre>
+<h2 id="cicd-pipeline">CI/CD Pipeline</h2>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 33%" />
+<col style="width: 29%" />
+</colgroup>
+<thead>
+<tr>
+<th>Workflow</th>
+<th>Trigger</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ci.yml</code></td>
+<td>PR to <code>develop</code>, <code>release/*</code>,
+<code>main</code></td>
+<td>sqlfluff lint + script validation</td>
+</tr>
+<tr>
+<td><code>deploy-qa.yml</code></td>
+<td>Push to <code>release/*</code></td>
+<td>Deploy to QA via schemachange</td>
+</tr>
+<tr>
+<td><code>deploy-preprod.yml</code></td>
+<td>Push to <code>main</code></td>
+<td>Deploy to PreProd via schemachange</td>
+</tr>
+<tr>
+<td><code>deploy-prod.yml</code></td>
+<td>Tag <code>v*</code> or manual dispatch</td>
+<td>Deploy to Prod via schemachange</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>Branching strategy:</strong> <code>feature/*</code> →
+<code>develop</code> → <code>release/*</code> → <code>main</code> → tag
+<code>v*</code></p>
+<h2 id="environments">Environments</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Environment</th>
+<th>Database</th>
+<th>Trigger</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>dev</td>
+<td><code>SSOM_COCO_DB</code></td>
+<td>Manual (local)</td>
+</tr>
+<tr>
+<td>qa</td>
+<td><code>SSOM_COCO_DB_QA</code></td>
+<td>Push to <code>release/*</code></td>
+</tr>
+<tr>
+<td>preprod</td>
+<td><code>SSOM_COCO_DB_PREPROD</code></td>
+<td>Push to <code>main</code></td>
+</tr>
+<tr>
+<td>prod</td>
+<td><code>SSOM_COCO_DB_PROD</code></td>
+<td>Tag <code>v*</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="schemachange-conventions">Schemachange Conventions</h2>
+<div class="table-wrap"><table style="width:100%;">
+<colgroup>
+<col style="width: 29%" />
+<col style="width: 33%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Prefix</th>
+<th>Meaning</th>
+<th>Behavior</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>V&lt;ver&gt;__&lt;name&gt;.sql</code></td>
+<td>Versioned</td>
+<td>Runs once, tracked in change history</td>
+</tr>
+<tr>
+<td><code>R__&lt;name&gt;.sql</code></td>
+<td>Repeatable</td>
+<td>Re-runs when file content changes</td>
+</tr>
+<tr>
+<td><code>A__&lt;name&gt;.sql</code></td>
+<td>Always-run</td>
+<td>Runs on every deployment</td>
+</tr>
+</tbody>
+</table></div>
+<p>Template variables available in SQL: <code>{{ database }}</code>,
+<code>{{ warehouse }}</code>, <code>{{ role }}</code>,
+<code>{{ environment }}</code></p>
+<h2 id="ingestion-options">Ingestion Options</h2>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 15%" />
+<col style="width: 35%" />
+<col style="width: 28%" />
+</colgroup>
+<thead>
+<tr>
+<th>Option</th>
+<th>Flag</th>
+<th>Source Files</th>
+<th>Mechanism</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CSV</strong></td>
+<td><code>--source=csv</code></td>
+<td><code>sample_data_file/*.csv</code></td>
+<td>PUT → Named Stage → Directory Stream → Tasks (COPY INTO)</td>
+</tr>
+<tr>
+<td><strong>Iceberg</strong></td>
+<td><code>--source=iceberg</code></td>
+<td><code>iceberg_warehouse/**/*.parquet</code></td>
+<td>PUT Parquet → Internal Stage → COPY INTO with column transforms</td>
+</tr>
+</tbody>
+</table></div>
+<p>Both options load into the same Bronze tables. Downstream ETL
+(Silver/Gold), data quality checks, and masking policies are identical
+regardless of source.</p>
+<h2 id="snowflake-target">Snowflake Target</h2>
+<div class="table-wrap"><table>
+<colgroup>
+<col style="width: 56%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Account</td>
+<td><code>KXAXARZ-GW22129</code></td>
+</tr>
+<tr>
+<td>Connection</td>
+<td><code>MY_TRIAL_ACCOUNT</code></td>
+</tr>
+<tr>
+<td>Warehouse</td>
+<td><code>COMPUTE_WH</code></td>
+</tr>
+<tr>
+<td>Schemas</td>
+<td><code>RAW_&lt;ENV&gt;</code>, <code>CLEAN_&lt;ENV&gt;</code>,
+<code>CONFORMED_&lt;ENV&gt;</code>, <code>GOVERNANCE_&lt;ENV&gt;</code>,
+<code>METADATA</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="sample-data">Sample Data</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Entity</th>
+<th>History Rows</th>
+<th>Incremental Rows</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Customer</td>
+<td>20</td>
+<td>10 (5 updates + 5 new)</td>
+<td>Customer master data</td>
+</tr>
+<tr>
+<td>Account</td>
+<td>35</td>
+<td>13</td>
+<td>Account records</td>
+</tr>
+<tr>
+<td>Transaction</td>
+<td>101</td>
+<td>31</td>
+<td>Financial transactions</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="documentation">Documentation</h2>
+<ul>
+<li><a href="DEVOPS_MANUAL.md"><code>DEVOPS_MANUAL.md</code></a> — Full
+operations manual (deployment, rollback, secrets, incident
+response)</li>
+<li><a href="OPERATIONS.md"><code>OPERATIONS.md</code></a> — Operational
+runbooks</li>
+<li><a href="lineage.md"><code>lineage.md</code></a> — Data lineage
+documentation</li>
+</ul>
+
+  <footer>
+    Generated by Cortex Code &bull; Snowflake Migration Project &bull; Teradata to Snowflake Migration
+  </footer>
+  <script>hljs.highlightAll();</script>
+</body>
+</html>

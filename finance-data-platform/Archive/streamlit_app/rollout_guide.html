@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="snowflake-source" content="cortex-agent-authored" />
+  <title>New Environment Rollout Guide</title>
+  <script type="application/json" id="snowflake-report-metadata">
+  {
+    "generated": "2026-08-20",
+    "intent": "Step-by-step guide for deploying the Finance Data Platform into a new Snowflake environment",
+    "sections": [
+      { "id": "prerequisites", "title": "Prerequisites", "producerNotes": "Auth options, role options, local tooling" },
+      { "id": "configure", "title": "Configure Environment", "producerNotes": "environments.yml and connection setup" },
+      { "id": "deploy", "title": "Deploy", "producerNotes": "Database creation, dry-run, and deployment steps" },
+      { "id": "validate", "title": "Validate", "producerNotes": "Smoke tests and post-deployment queries" },
+      { "id": "checklist", "title": "Rollout Checklist", "producerNotes": "Full deployment tracking checklist" }
+    ]
+  }
+  </script>
+  <style>
+    :root { color-scheme: light dark; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, system-ui, 'Segoe UI', sans-serif;
+      max-width: 960px; width: 100%;
+      margin: 0 auto; padding: clamp(16px, 4vw, 32px);
+      color: light-dark(#1f2937, #e5e7eb);
+      background: light-dark(#ffffff, #0f172a);
+      line-height: 1.6;
+    }
+    h1 { color: light-dark(#0f172a, #f1f5f9); font-size: 2rem; border-bottom: 3px solid light-dark(#dc2626, #f87171); padding-bottom: 8px; }
+    h2 { color: light-dark(#991b1b, #fca5a5); font-size: 1.4rem; margin-top: 2.5rem; border-bottom: 1px solid light-dark(#e5e7eb, #374151); padding-bottom: 4px; }
+    h3 { color: light-dark(#374151, #94a3b8); font-size: 1.1rem; margin-top: 1.5rem; }
+    a { color: light-dark(#dc2626, #f87171); }
+    code { background: light-dark(#f3f4f6, #1e293b); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; }
+    pre { background: light-dark(#1e293b, #0f172a); color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 0.85em; line-height: 1.5; border: 1px solid light-dark(#334155, #1e293b); }
+    pre code { background: none; padding: 0; }
+    .table-wrap { overflow-x: auto; margin: 16px 0; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+    th, td { border: 1px solid light-dark(#d1d5db, #374151); padding: 8px 12px; text-align: left; }
+    th { background: light-dark(#f3f4f6, #1e293b); font-weight: 600; }
+    tr:nth-child(even) { background: light-dark(#f9fafb, #111827); }
+    .banner { background: linear-gradient(135deg, light-dark(#991b1b, #450a0a) 0%, light-dark(#dc2626, #ef4444) 100%); color: #fff; padding: 24px 32px; border-radius: 12px; margin-bottom: 32px; }
+    .banner h1 { color: #fff; border: none; margin: 0; padding: 0; }
+    .banner p { color: #fecaca; margin: 4px 0 0; font-size: 0.95rem; }
+    .toc { background: light-dark(#f8fafc, #1e293b); border: 1px solid light-dark(#e2e8f0, #334155); border-radius: 8px; padding: 16px 24px; margin-bottom: 32px; }
+    .toc h3 { margin-top: 0; }
+    .toc ul { padding-left: 20px; margin: 8px 0; }
+    .toc li { margin: 4px 0; }
+    .toc a { text-decoration: none; }
+    .diagram { background: light-dark(#0f172a, #020617); color: #67e8f9; padding: 16px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 0.78em; line-height: 1.4; white-space: pre; }
+    blockquote { border-left: 4px solid light-dark(#dc2626, #f87171); margin: 16px 0; padding: 8px 16px; background: light-dark(#fef2f2, #1e293b); border-radius: 0 4px 4px 0; }
+    .step-header { background: light-dark(#fef2f2, #1c1917); border: 1px solid light-dark(#fca5a5, #7f1d1d); border-radius: 8px; padding: 12px 16px; margin: 24px 0 12px; }
+    .step-header strong { color: light-dark(#991b1b, #fca5a5); }
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { padding: 8px 12px; border-bottom: 1px solid light-dark(#e5e7eb, #334155); display: flex; gap: 12px; align-items: baseline; }
+    .checklist li:nth-child(even) { background: light-dark(#f9fafb, #111827); }
+    .check-num { background: light-dark(#dc2626, #991b1b); color: #fff; border-radius: 50%; width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75em; font-weight: 700; flex-shrink: 0; }
+    img, svg { max-width: 100%; height: auto; }
+    .footer { text-align: center; color: light-dark(#6b7280, #64748b); font-size: 0.8rem; margin-top: 48px; padding-top: 16px; border-top: 1px solid light-dark(#e5e7eb, #334155); }
+  </style>
+</head>
+<body>
+
+<div class="banner">
+  <h1>New Environment Rollout Guide</h1>
+  <p>Step-by-step deployment of the Finance Data Platform into a new Snowflake environment</p>
+</div>
+
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ul>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#step1">Step 1: Configure the Environment</a></li>
+    <li><a href="#step2">Step 2: Create Target Database</a></li>
+    <li><a href="#step3">Step 3: Bootstrap Change History</a></li>
+    <li><a href="#step4">Step 4: Dry-Run Deployment</a></li>
+    <li><a href="#step5">Step 5: Deploy</a></li>
+    <li><a href="#step6">Step 6: Smoke Tests</a></li>
+    <li><a href="#step7">Step 7: Load Seed Data</a></li>
+    <li><a href="#step8">Step 8: Resume Tasks</a></li>
+    <li><a href="#checklist">Rollout Checklist</a></li>
+    <li><a href="#execution-order">Execution Order Reference</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#rollback">Rollback Strategy</a></li>
+  </ul>
+</div>
+
+<p><strong>Promotion path:</strong> <code>dev &rarr; qa &rarr; preprod &rarr; prod</code></p>
+
+<h2 id="prerequisites">Prerequisites</h2>
+
+<h3>Authentication Options</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Method</th><th>Interactive</th><th>CI/CD</th><th>Security</th></tr></thead>
+  <tbody>
+    <tr><td>Key-Pair (recommended)</td><td>No</td><td>Yes</td><td>High &mdash; no secrets in transit</td></tr>
+    <tr><td>Okta SSO &mdash; browser</td><td>Yes</td><td>No</td><td>High &mdash; federated identity</td></tr>
+    <tr><td>Okta SSO &mdash; programmatic</td><td>No</td><td>Yes</td><td>Medium &mdash; password in CI secrets</td></tr>
+    <tr><td>Password (dev only)</td><td>Yes</td><td>Possible</td><td>Low</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Key-Pair Setup</h3>
+<pre><code># Generate RSA key pair
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.snowflake/ci_key.p8 -nocrypt
+openssl rsa -in ~/.snowflake/ci_key.p8 -pubout -out ~/.snowflake/ci_key.pub
+
+# Register in Snowflake:
+ALTER USER DEPLOY_USER SET RSA_PUBLIC_KEY='&lt;public key without headers&gt;';</code></pre>
+
+<h3>Role Options</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Approach</th><th>Grants Needed</th><th>Best For</th></tr></thead>
+  <tbody>
+    <tr><td>Option A: SYSADMIN</td><td>0 (built-in)</td><td>Dev, trial, small teams</td></tr>
+    <tr><td>Option B: DB Ownership</td><td>3</td><td>Most production teams</td></tr>
+    <tr><td>Option C: Least-Privilege</td><td>~25</td><td>Regulated/audited environments</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Local Tooling</h3>
+<pre><code>pip install -r requirements.txt    # schemachange, pyyaml, jinja2
+pip install snowflake-cli-labs     # Snowflake CLI (for smoke tests)
+pip install sqlfluff               # SQL linter (for CI)</code></pre>
+
+<h2 id="step1">Step 1: Configure the Environment</h2>
+
+<div class="step-header"><strong>1.1</strong> Add environment to <code>environments.yml</code></div>
+<pre><code>staging:
+  database: FINANCE_CORE_DEV
+  schema_suffix: _STAGING
+  raw_schema: RAW_STAGING
+  clean_schema: CLEAN_STAGING
+  conformed_schema: CONFORMED_STAGING
+  governance_schema: GOVERNANCE_STAGING
+  warehouse: COMPUTE_WH
+  connection: MY_STAGING_ACCOUNT</code></pre>
+
+<div class="step-header"><strong>1.2</strong> Configure Snowflake CLI connection</div>
+<pre><code># ~/.snowflake/connections.toml
+[MY_STAGING_ACCOUNT]
+account = "your-account-locator"
+user = "your-username"
+authenticator = "SNOWFLAKE_JWT"
+private_key_path = "~/.snowflake/rsa_key.p8"
+warehouse = "COMPUTE_WH"</code></pre>
+
+<div class="step-header"><strong>1.3</strong> Set CI/CD environment variables</div>
+<pre><code>export SNOWFLAKE_ACCOUNT="your-account-locator"
+export SNOWFLAKE_USER="your-service-user"
+export SNOWFLAKE_PRIVATE_KEY_PATH="~/.snowflake/ci_key.p8"
+export SNOWFLAKE_ROLE="SYSADMIN"
+export SNOWFLAKE_WAREHOUSE="COMPUTE_WH"</code></pre>
+
+<h2 id="step2">Step 2: Create Target Database</h2>
+
+<pre><code>-- Connect as SYSADMIN
+USE ROLE SYSADMIN;
+
+CREATE DATABASE IF NOT EXISTS FINANCE_DB_STAGING
+COMMENT = 'Finance Data Platform - Staging Environment';
+
+GRANT OWNERSHIP ON DATABASE FINANCE_DB_STAGING TO ROLE SYSADMIN;</code></pre>
+
+<p>Or via CLI:</p>
+<pre><code>snow sql -c MY_STAGING_ACCOUNT -q "
+  USE ROLE SYSADMIN;
+  CREATE DATABASE IF NOT EXISTS FINANCE_DB_STAGING
+  COMMENT = 'Finance Data Platform - Staging Environment';
+"</code></pre>
+
+<h2 id="step3">Step 3: Bootstrap Change History (Optional)</h2>
+
+<pre><code>snow sql -c MY_STAGING_ACCOUNT \
+  --database FINANCE_DB_STAGING \
+  -f scripts/bootstrap_change_history.sql</code></pre>
+
+<p>Creates: <code>METADATA</code> schema + <code>METADATA.SCHEMACHANGE_HISTORY</code> table. (Auto-created on first deploy if skipped.)</p>
+
+<h2 id="step4">Step 4: Dry-Run Deployment</h2>
+
+<pre><code>bash scripts/deploy_schemachange.sh --env=staging --dry-run</code></pre>
+
+<blockquote>
+<strong>Verify:</strong>
+<ul>
+  <li>Domain order: platform (000) &rarr; ecomm (050) &rarr; aftermarket (150) &rarr; uds (200) &rarr; orchestration (800) &rarr; governance (900)</li>
+  <li>Within each domain: raw (1xx) &rarr; clean (2xx) &rarr; conformed (3xx)</li>
+  <li>No errors about missing variables or syntax issues</li>
+</ul>
+</blockquote>
+
+<h2 id="step5">Step 5: Deploy</h2>
+
+<pre><code>bash scripts/deploy_schemachange.sh --env=staging</code></pre>
+
+<h3>Deployment Execution Order</h3>
+<div class="table-wrap">
+<table>
+  <thead><tr><th>#</th><th>Version</th><th>Domain</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>V1.000.100</td><td>_platform</td><td>Creates schemas: RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA</td></tr>
+    <tr><td>2</td><td>V1.050.100</td><td>ecomm/raw</td><td>Creates raw tables</td></tr>
+    <tr><td>3</td><td>V1.050.200</td><td>ecomm/clean</td><td>Creates clean tables</td></tr>
+    <tr><td>4</td><td>V1.050.300</td><td>ecomm/conformed</td><td>Creates conformed tables</td></tr>
+    <tr><td>5&ndash;7</td><td>V1.051.*</td><td>ecomm_budget</td><td>Raw, clean, conformed tables</td></tr>
+    <tr><td>8&ndash;9</td><td>V1.052.*</td><td>ecomm_actuals</td><td>Clean, conformed tables</td></tr>
+    <tr><td>10&ndash;12</td><td>V1.150.*</td><td>aftermarket</td><td>Raw, clean, conformed tables</td></tr>
+    <tr><td>13&ndash;15</td><td>V1.200.*</td><td>uds</td><td>Raw, clean, conformed tables</td></tr>
+    <tr><td>16</td><td>V1.800.100</td><td>orchestration</td><td>Task framework</td></tr>
+    <tr><td>17&ndash;18</td><td>V1.900.*</td><td>governance</td><td>Masking policies, DATA_QUALITY_LOG</td></tr>
+    <tr><td>19</td><td>R__*.sql</td><td>all</td><td>Repeatable scripts (procedures/views)</td></tr>
+    <tr><td>20</td><td>A__grants.sql</td><td>governance</td><td>Grants (every deployment)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Verify Deployment</h3>
+<pre><code>SELECT SCRIPT, VERSION, STATUS, INSTALLED_ON
+FROM FINANCE_DB_STAGING.METADATA.SCHEMACHANGE_HISTORY
+ORDER BY INSTALLED_ON;</code></pre>
+
+<h2 id="step6">Step 6: Smoke Tests</h2>
+
+<pre><code>bash scripts/run_smoke_tests.sh --env=staging</code></pre>
+
+<p>Validates all expected objects exist across all domains and layers.</p>
+
+<h2 id="step7">Step 7: Load Seed Data (Optional)</h2>
+
+<pre><code># Seed data is a repeatable script - runs automatically during deploy.
+# To reload manually:
+snow sql -c MY_STAGING_ACCOUNT \
+  --database FINANCE_DB_STAGING \
+  -f banking/reference/R__seed_data.sql</code></pre>
+
+<h2 id="step8">Step 8: Resume Tasks (If Applicable)</h2>
+
+<p>Tasks are created in suspended state. Resume for scheduled ingestion:</p>
+<pre><code>USE DATABASE FINANCE_DB_STAGING;
+ALTER TASK RAW_STAGING.TASK_LOAD_CUSTOMER RESUME;
+ALTER TASK RAW_STAGING.TASK_LOAD_ACCOUNT RESUME;
+ALTER TASK RAW_STAGING.TASK_LOAD_TRANSACTION RESUME;</code></pre>
+
+<h2 id="checklist">Rollout Checklist</h2>
+
+<ul class="checklist">
+  <li><span class="check-num">1</span> Add environment to <code>environments.yml</code></li>
+  <li><span class="check-num">2</span> Configure Snowflake CLI connection (<code>~/.snowflake/connections.toml</code>)</li>
+  <li><span class="check-num">3</span> Set CI/CD secrets (if automated)</li>
+  <li><span class="check-num">4</span> Create target database (<code>CREATE DATABASE ...</code>)</li>
+  <li><span class="check-num">5</span> Dry-run deployment (<code>deploy_schemachange.sh --env=X --dry-run</code>)</li>
+  <li><span class="check-num">6</span> Review dry-run output (verify script order and variables)</li>
+  <li><span class="check-num">7</span> Deploy (<code>deploy_schemachange.sh --env=X</code>)</li>
+  <li><span class="check-num">8</span> Verify change history (query <code>METADATA.SCHEMACHANGE_HISTORY</code>)</li>
+  <li><span class="check-num">9</span> Run smoke tests (<code>run_smoke_tests.sh --env=X</code>)</li>
+  <li><span class="check-num">10</span> Load seed data (if needed)</li>
+  <li><span class="check-num">11</span> Resume tasks (if needed)</li>
+  <li><span class="check-num">12</span> Run integration tests</li>
+</ul>
+
+<h2 id="execution-order">Execution Order Reference</h2>
+
+<div class="diagram">┌─────────────────────────────────────────────────────────────────────────┐
+│  DEPLOYMENT EXECUTION ORDER                                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. Versioned (V__) — run once, in numeric order:                       │
+│                                                                          │
+│     V1.000.100  _platform        → create infrastructure (schemas)       │
+│     V1.050.1xx  ecomm/raw        → raw tables                           │
+│     V1.050.2xx  ecomm/clean      → clean tables                         │
+│     V1.050.3xx  ecomm/conformed  → conformed tables                     │
+│     V1.051.*    ecomm_budget     → raw/clean/conformed                  │
+│     V1.052.*    ecomm_actuals    → clean/conformed                      │
+│     V1.150.*    aftermarket      → raw/clean/conformed                  │
+│     V1.200.*    uds              → raw/clean/conformed                  │
+│     V1.800.100  orchestration    → task framework                        │
+│     V1.900.*    governance       → masking + data quality                │
+│                                                                          │
+│  2. Repeatable (R__) — run on content change                            │
+│                                                                          │
+│  3. Always (A__) — run every deployment                                 │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘</div>
+
+<h2 id="troubleshooting">Troubleshooting</h2>
+
+<div class="table-wrap">
+<table>
+  <thead><tr><th>Error</th><th>Cause</th><th>Fix</th></tr></thead>
+  <tbody>
+    <tr><td><code>Table does not exist</code></td><td>Script references object not yet created (version ordering)</td><td>Verify versions follow: raw (1xx) &rarr; clean (2xx) &rarr; conformed (3xx)</td></tr>
+    <tr><td><code>Schema does not exist</code></td><td>Database exists but V1.000.100 didn't run</td><td>Check SCHEMACHANGE_HISTORY; re-run deploy if empty</td></tr>
+    <tr><td><code>Object already exists</code></td><td>V__ script modified after being applied</td><td>Never modify applied V__ scripts; create new version</td></tr>
+    <tr><td><code>Insufficient privileges</code></td><td>Deployment role lacks permissions</td><td><code>GRANT OWNERSHIP ON DATABASE ... TO ROLE SYSADMIN;</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Starting Fresh (Nuclear Option)</h3>
+<pre><code>-- Drop and recreate (CAUTION: destroys all data)
+DROP DATABASE IF EXISTS FINANCE_DB_STAGING;
+CREATE DATABASE FINANCE_DB_STAGING;
+
+-- Then re-run from Step 4</code></pre>
+
+<h2 id="rollback">Rollback Strategy</h2>
+
+<p>Schemachange does not support native rollback. Use one of these approaches:</p>
+<ol>
+  <li><strong>Forward-fix:</strong> Create a new versioned migration that reverses the change</li>
+  <li><strong>Full redeploy:</strong> Drop database, recreate, and run schemachange from scratch</li>
+  <li><strong>Point-in-time:</strong> Use Snowflake Time Travel (within retention period)</li>
+</ol>
+
+<pre><code>-- Time Travel example (within 24 hours)
+CREATE TABLE RAW_DEV.T_CUSTOMER_ROLLBACK
+AS SELECT * FROM RAW_DEV.T_CUSTOMER AT(OFFSET =&gt; -3600);</code></pre>
+
+<h2>Post-Deployment Validation</h2>
+
+<pre><code>USE DATABASE FINANCE_DB_STAGING;
+
+-- 1. Object counts by schema
+SELECT TABLE_SCHEMA, TABLE_TYPE, COUNT(*) AS object_count
+FROM INFORMATION_SCHEMA.TABLES
+GROUP BY TABLE_SCHEMA, TABLE_TYPE
+ORDER BY TABLE_SCHEMA, TABLE_TYPE;
+
+-- 2. Procedure counts
+SELECT PROCEDURE_SCHEMA, COUNT(*) AS proc_count
+FROM INFORMATION_SCHEMA.PROCEDURES
+GROUP BY PROCEDURE_SCHEMA;
+
+-- 3. Task status
+SHOW TASKS IN DATABASE FINANCE_DB_STAGING;
+
+-- 4. Migration history
+SELECT VERSION, SCRIPT, STATUS, INSTALLED_ON
+FROM METADATA.SCHEMACHANGE_HISTORY
+ORDER BY INSTALLED_ON;</code></pre>
+
+<div class="footer">
+  Rollout Guide &bull; Finance Data Platform &bull; Powered by Snowflake
+</div>
+
+</body>
+</html>
