@@ -10,6 +10,8 @@ clean_schema = "CLEAN"
 conformed_schema = "CONFORMED"
 governance_schema = "GOVERNANCE"
 environment = "dev"
+warehouse = "COMPUTE_WH"
+role = "SYSADMIN"
 
 [sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = upper
