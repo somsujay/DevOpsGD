@@ -178,10 +178,32 @@ To make this a hard gate, mark **"Enforce Branching Rules"** as a required statu
 
 ### Production Rollback (Manual)
 
-Trigger via GitHub Actions UI:
+**Option 1: GitHub CLI (from terminal)**
+
+```bash
+gh workflow run deploy-prod.yml -f action=rollback -f rollback_version=v1.2.0
 ```
-gh workflow run deploy-prod.yml -f action=rollback -f rollback_version=<tag-or-sha>
-```
+
+Replace `v1.2.0` with the tag or commit SHA you want to roll back to.
+
+**Option 2: GitHub UI (browser)**
+
+1. Go to your repo on GitHub
+2. Click **Actions** tab
+3. Select **Deploy to PROD** workflow on the left
+4. Click **Run workflow** button (top right)
+5. Select:
+   - **Action to perform:** `rollback`
+   - **Version to rollback to:** enter the tag (e.g., `v1.2.0`) or commit SHA
+6. Click **Run workflow**
+
+The production environment requires 2 reviewer approvals before the rollback executes (configured in your GitHub environment protection rules).
+
+**Prerequisites:**
+
+- The tag/SHA must exist in git history
+- You must have write access to the repo
+- For the CLI option, you need `gh` authenticated (`gh auth login`)
 
 ---
 
