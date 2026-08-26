@@ -11,7 +11,7 @@ CREATE OR REPLACE TASK {{ raw_schema }}.TASK_LOAD_CUSTOMER
     WAREHOUSE = '{{ warehouse }}'
     SCHEDULE = 'USING CRON */5 * * * * America/Toronto'
     COMMENT = 'Auto-ingest customer CSVs from named stage'
-WHEN SYSTEM$STREAM_HAS_DATA ('{{ raw_schema }}.STREAM_DATA_FILES')
+WHEN SYSTEM$STREAM_HAS_DATA ('{{ raw_schema }}.STREAM_DATA_FILES')  -- noqa: LT01, LT06
 AS
     COPY INTO {{ raw_schema }}.T_CUSTOMER
     (
@@ -25,7 +25,7 @@ CREATE OR REPLACE TASK {{ raw_schema }}.TASK_LOAD_ACCOUNT
     WAREHOUSE = '{{ warehouse }}'
     SCHEDULE = 'USING CRON */5 * * * * America/Toronto'
     COMMENT = 'Auto-ingest account CSVs from named stage'
-WHEN SYSTEM$STREAM_HAS_DATA ('{{ raw_schema }}.STREAM_DATA_FILES')
+WHEN SYSTEM$STREAM_HAS_DATA ('{{ raw_schema }}.STREAM_DATA_FILES')  -- noqa: LT01, LT06
 AS
     COPY INTO {{ raw_schema }}.T_ACCOUNT
     (
@@ -39,7 +39,7 @@ CREATE OR REPLACE TASK {{ raw_schema }}.TASK_LOAD_TRANSACTION
     WAREHOUSE = '{{ warehouse }}'
     SCHEDULE = 'USING CRON */5 * * * * America/Toronto'
     COMMENT = 'Auto-ingest transaction CSVs from named stage'
-WHEN SYSTEM$STREAM_HAS_DATA ('{{ raw_schema }}.STREAM_DATA_FILES')
+WHEN SYSTEM$STREAM_HAS_DATA ('{{ raw_schema }}.STREAM_DATA_FILES')  -- noqa: LT01, LT06
 AS
     COPY INTO {{ raw_schema }}.T_TRANSACTION
     (
