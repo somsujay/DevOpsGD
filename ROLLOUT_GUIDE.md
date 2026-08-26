@@ -343,7 +343,7 @@ snow sql -c MY_STAGING_ACCOUNT \
 
 This creates:
 - `METADATA` schema
-- `METADATA.SCHEMACHANGE_HISTORY` tracking table
+- `METADATA.CHANGE_HISTORY` tracking table
 
 ---
 
@@ -447,7 +447,7 @@ Check the change history table to confirm all scripts were applied:
 
 ```sql
 SELECT SCRIPT, VERSION, STATUS, INSTALLED_ON
-FROM FINANCE_DB_STAGING.METADATA.SCHEMACHANGE_HISTORY
+FROM FINANCE_DB_STAGING.METADATA.CHANGE_HISTORY
 ORDER BY INSTALLED_ON;
 ```
 
@@ -499,7 +499,7 @@ If the environment needs reference/seed data:
 # If you need to reload manually:
 snow sql -c MY_STAGING_ACCOUNT \
   --database FINANCE_DB_STAGING \
-  -f banking/reference/R__seed_data.sql
+  -f finance-data-platform/reference/R__seed_data.sql
 ```
 
 ---
@@ -530,7 +530,7 @@ Use this checklist to track deployment progress:
 | 5 | Dry-run deployment | `deploy_schemachange.sh --env=X --dry-run` | ☐ |
 | 6 | Review dry-run output | Verify script order and variables | ☐ |
 | 7 | Deploy | `deploy_schemachange.sh --env=X` | ☐ |
-| 8 | Verify change history | Query `METADATA.SCHEMACHANGE_HISTORY` | ☐ |
+| 8 | Verify change history | Query `METADATA.CHANGE_HISTORY` | ☐ |
 | 9 | Run smoke tests | `run_smoke_tests.sh --env=X` | ☐ |
 | 10 | Load seed data (if needed) | R__seed_data.sql | ☐ |
 | 11 | Resume tasks (if needed) | `ALTER TASK ... RESUME` | ☐ |
@@ -611,11 +611,11 @@ Schemachange applies scripts globally in version-sorted order, regardless of fol
 ```bash
 # Check what's been applied
 snow sql -c MY_STAGING_ACCOUNT --database FINANCE_DB_STAGING -q "
-  SELECT SCRIPT, STATUS FROM METADATA.SCHEMACHANGE_HISTORY ORDER BY INSTALLED_ON;
+  SELECT SCRIPT, STATUS FROM METADATA.CHANGE_HISTORY ORDER BY INSTALLED_ON;
 "
 ```
 
-If METADATA.SCHEMACHANGE_HISTORY doesn't exist, the deploy never started successfully. Re-run from step 4.
+If METADATA.CHANGE_HISTORY doesn't exist, the deploy never started successfully. Re-run from step 4.
 
 ### Error: "Object already exists"
 
@@ -704,7 +704,7 @@ SHOW STAGES IN SCHEMA RAW_DEV;
 
 -- 5. Migration history
 SELECT VERSION, SCRIPT, STATUS, INSTALLED_ON
-FROM METADATA.SCHEMACHANGE_HISTORY
+FROM METADATA.CHANGE_HISTORY
 ORDER BY INSTALLED_ON;
 ```
 

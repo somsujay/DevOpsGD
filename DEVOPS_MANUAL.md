@@ -19,7 +19,7 @@
 │                       Snowflake (KXAXARZ-GW22129)                             │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
-│  FINANCE_CORE_DEV (development)                                              │
+│  FINANCE_CORE_DEV_POC (development)                                              │
 │    └── RAW / CLEAN / CONFORMED / GOVERNANCE / METADATA                       │
 │                                                                              │
 │  FINANCE_CORE_STAGE (staging)                                                │
@@ -37,21 +37,21 @@
 
 ## 2. Project Structure
 
-The SQL codebase uses **schemachange** for migration management, organized under the `banking/` root folder:
+The SQL codebase uses **schemachange** for migration management, organized under the `finance-data-platform/` root folder:
 
 ```
-banking/
+finance-data-platform/
 ├── _platform/
 │   └── V1.000.100__setup_schemas.sql           # Schema creation (RAW, CLEAN, CONFORMED, GOVERNANCE)
-├── raw/retail/
+├── raw/ecomm/
 │   └── V1.050.100__create_raw_tables.sql       # Raw staging tables (T_CUSTOMER, T_ACCOUNT, T_TRANSACTION)
-├── clean/retail/
+├── clean/ecomm/
 │   ├── V1.050.200__create_clean_tables.sql     # Clean dimension tables (DIMCUSTOMER, DIMACCOUNT, etc.)
-│   └── R__retail_clean_procedures.sql          # Repeatable: Clean ETL procedures (SCD-2, SCD-1)
-├── conformed/retail/
+│   └── R__ecomm_clean_procedures.sql          # Repeatable: Clean ETL procedures (SCD-2, SCD-1)
+├── conformed/ecomm/
 │   ├── V1.050.300__create_conformed_tables.sql # Conformed fact tables (FACTDAILYTRANSACTION, FACTDAILYAGG)
-│   ├── R__retail_procedures.sql                # Repeatable: Conformed ETL procedures
-│   └── R__retail_views.sql                     # Repeatable: Conformed views (re-run every deploy)
+│   ├── R__ecomm_procedures.sql                # Repeatable: Conformed ETL procedures
+│   └── R__ecomm_views.sql                     # Repeatable: Conformed views (re-run every deploy)
 ├── orchestration/
 │   ├── R__orchestration.sql                    # Repeatable: Daily_ETL_Run() orchestrator
 │   └── R__ingestion_tasks.sql                  # Repeatable: Ingestion task definitions
@@ -79,10 +79,10 @@ banking/
 File: `schemachange-config.yml`
 
 ```yaml
-root-folder: banking
+root-folder: finance-data-platform
 modules-folder: null
 vars:
-  database: "FINANCE_CORE_DEV"
+  database: "FINANCE_CORE_DEV_POC"
   warehouse: "COMPUTE_WH"
   role: "SYSADMIN"
   environment: "dev"
@@ -92,17 +92,17 @@ vars:
   governance_schema: "GOVERNANCE"
 
 create-change-history-table: true
-change-history-table: "FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY"
+change-history-table: "FINANCE_CORE_DEV_POC.METADATA.CHANGE_HISTORY"
 autocommit: true
 dry-run: false
 ```
 
 ### 2.3 Change History
 
-Schemachange tracks all applied migrations in `<database>.METADATA.SCHEMACHANGE_HISTORY`. Query it to see deployment state:
+Schemachange tracks all applied migrations in `<database>.METADATA.CHANGE_HISTORY`. Query it to see deployment state:
 
 ```sql
-SELECT * FROM FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY ORDER BY INSTALLED_ON DESC;
+SELECT * FROM FINANCE_CORE_DEV_POC.METADATA.CHANGE_HISTORY ORDER BY INSTALLED_ON DESC;
 ```
 
 ---
@@ -142,12 +142,12 @@ SELECT * FROM FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY ORDER BY INSTALLED_
 ### 3.4 CI Lint Job Details
 
 The CI workflow:
-1. Lints `banking/` with sqlfluff
+1. Lints `finance-data-platform/` with sqlfluff
 2. Validates versioned migration files (`V*.sql`) exist and are non-empty
 3. Checks `environments.yml` has all required environments (dev, stage, prod)
 4. Runs shellcheck on deployment scripts
 
-Path triggers: `banking/**`, `scripts/**`, `tests/**`, `environments.yml`, `schemachange-config.yml`, `.sqlfluff`
+Path triggers: `finance-data-platform/**`, `scripts/**`, `tests/**`, `environments.yml`, `schemachange-config.yml`, `.sqlfluff`
 
 > **Note:** Branch patterns use `feature/**` (double-star) to match nested branch names like `feature/JIRA-123/add-table`. A single `*` only matches one path segment. Additionally, the CI workflow only triggers when changed files fall within the listed `paths` — pushes that only modify files outside these paths (e.g., README, docs) will not trigger the lint.
 
@@ -249,7 +249,7 @@ This prevents PRs from being merged even if someone force-approves a review.
 
 ### 5.1 Primary Deployment: Schemachange
 
-The primary deployment method uses `scripts/deploy_schemachange.sh`, which invokes schemachange against the `banking/` root folder:
+The primary deployment method uses `scripts/deploy_schemachange.sh`, which invokes schemachange against the `finance-data-platform/` root folder:
 
 ```bash
 # Deploy to dev (local)
@@ -267,9 +267,9 @@ bash scripts/deploy_schemachange.sh --env=prod --dry-run
 The script:
 1. Reads database/warehouse/connection from `environments.yml`
 2. Authenticates via RSA private key (`SNOWFLAKE_PRIVATE_KEY_PATH` or `~/.snowflake/ci_key.p8`)
-3. Runs `schemachange deploy` against the `banking/` folder
+3. Runs `schemachange deploy` against the `finance-data-platform/` folder
 4. Passes `database`, `warehouse`, `role`, `environment`, and schema names as template variables
-5. Tracks history in `<database>.METADATA.SCHEMACHANGE_HISTORY`
+5. Tracks history in `<database>.METADATA.CHANGE_HISTORY`
 
 ### 5.2 Legacy Deployment: deploy.sh
 
@@ -330,7 +330,7 @@ gh workflow run deploy-prod.yml -f action=deploy
 ```bash
 # 1. Create a new versioned migration file
 #    Use the next version number and a descriptive name
-touch banking/<layer>/<domain>/V1.11.0__add_new_table.sql
+touch finance-data-platform/<layer>/<domain>/V1.11.0__add_new_table.sql
 
 # 2. Write your SQL (use Jinja vars for database targeting)
 #    Available vars: {{database}}, {{warehouse}}, {{role}}, {{environment}},
@@ -407,7 +407,7 @@ Since schemachange tracks applied versions, rolling back requires one of:
 
 ```yaml
 dev:
-  database: FINANCE_CORE_DEV
+  database: FINANCE_CORE_DEV_POC
   raw_schema: RAW
   clean_schema: CLEAN
   conformed_schema: CONFORMED
@@ -452,7 +452,7 @@ Scripts accept runtime overrides:
 
 ```sql
 -- Each environment gets its own database:
-CREATE DATABASE IF NOT EXISTS FINANCE_CORE_DEV;
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_DEV_POC;
 CREATE DATABASE IF NOT EXISTS FINANCE_CORE_STAGE;
 CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;
 
@@ -495,7 +495,7 @@ After every deployment, the pipeline validates:
 ```bash
 snow sql -c MY_TRIAL_ACCOUNT -q "
   SELECT TABLE_SCHEMA, COUNT(*) AS object_count
-  FROM FINANCE_CORE_DEV.INFORMATION_SCHEMA.TABLES
+  FROM FINANCE_CORE_DEV_POC.INFORMATION_SCHEMA.TABLES
   GROUP BY TABLE_SCHEMA
   ORDER BY TABLE_SCHEMA;
 "
@@ -506,7 +506,7 @@ snow sql -c MY_TRIAL_ACCOUNT -q "
 ```bash
 snow sql -c MY_TRIAL_ACCOUNT -q "
   SELECT VERSION, SCRIPT, INSTALLED_ON, STATUS
-  FROM FINANCE_CORE_DEV.METADATA.SCHEMACHANGE_HISTORY
+  FROM FINANCE_CORE_DEV_POC.METADATA.CHANGE_HISTORY
   ORDER BY INSTALLED_ON DESC
   LIMIT 20;
 "
@@ -531,7 +531,7 @@ snow sql -c MY_TRIAL_ACCOUNT -q "
 1. ASSESS
    - Check GitHub Actions run logs
    - Check Snowflake query history: SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY
-   - Check migration state: SELECT * FROM <DB>.METADATA.SCHEMACHANGE_HISTORY ORDER BY INSTALLED_ON DESC;
+   - Check migration state: SELECT * FROM <DB>.METADATA.CHANGE_HISTORY ORDER BY INSTALLED_ON DESC;
 
 2. CONTAIN
    - Suspend tasks if ETL is producing bad data:
@@ -670,10 +670,10 @@ ignore = Teradata_Scripts
 
 ```bash
 # Check for issues
-sqlfluff lint banking/ --dialect snowflake --config .sqlfluff
+sqlfluff lint finance-data-platform/ --dialect snowflake --config .sqlfluff
 
 # Auto-fix issues
-sqlfluff fix banking/ --dialect snowflake --config .sqlfluff --force
+sqlfluff fix finance-data-platform/ --dialect snowflake --config .sqlfluff --force
 ```
 
 ### 12.4 Pre-Commit Hook (Optional)
@@ -681,7 +681,7 @@ sqlfluff fix banking/ --dialect snowflake --config .sqlfluff --force
 ```bash
 # .git/hooks/pre-commit
 #!/bin/bash
-sqlfluff lint banking/ --dialect snowflake --config .sqlfluff
+sqlfluff lint finance-data-platform/ --dialect snowflake --config .sqlfluff
 ```
 
 ---
@@ -756,7 +756,7 @@ CREATE WAREHOUSE IF NOT EXISTS COMPUTE_WH
 #### Step 3: Create Databases
 
 ```sql
-CREATE DATABASE IF NOT EXISTS FINANCE_CORE_DEV;
+CREATE DATABASE IF NOT EXISTS FINANCE_CORE_DEV_POC;
 CREATE DATABASE IF NOT EXISTS FINANCE_CORE_STAGE;
 CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;
 ```
@@ -765,7 +765,7 @@ CREATE DATABASE IF NOT EXISTS FINANCE_CORE_PROD;
 
 ```sql
 GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE SYSADMIN;
-GRANT ALL ON DATABASE FINANCE_CORE_DEV TO ROLE SYSADMIN;
+GRANT ALL ON DATABASE FINANCE_CORE_DEV_POC TO ROLE SYSADMIN;
 GRANT ALL ON DATABASE FINANCE_CORE_STAGE TO ROLE SYSADMIN;
 GRANT ALL ON DATABASE FINANCE_CORE_PROD TO ROLE SYSADMIN;
 ```
@@ -821,7 +821,7 @@ user = "SOMSUJAY"
 authenticator = "SNOWFLAKE_JWT"
 private_key_path = "/Users/<your-username>/.snowflake/trial_key.p8"
 warehouse = "COMPUTE_WH"
-database = "FINANCE_CORE_DEV"
+database = "FINANCE_CORE_DEV_POC"
 ```
 
 ```bash
@@ -884,12 +884,12 @@ SNOWFLAKE_ACCOUNT + SNOWFLAKE_USER + SNOWFLAKE_PRIVATE_KEY
          scripts/deploy_schemachange.sh
                           │
                           ▼
-         schemachange deploy --root-folder banking/
+         schemachange deploy --root-folder finance-data-platform/
            --snowflake-account <ACCOUNT>
            --snowflake-user <USER>
            --snowflake-private-key-path ~/.snowflake/ci_key.p8
            --snowflake-database <DB from environments.yml>
-           --change-history-table <DB>.METADATA.SCHEMACHANGE_HISTORY
+           --change-history-table <DB>.METADATA.CHANGE_HISTORY
 ```
 
 ---
@@ -917,15 +917,15 @@ bash scripts/run_incremental.sh
 
 # 7. Verify ETL results
 snow sql -c MY_TRIAL_ACCOUNT -q "
-  SELECT 'T_Customer' AS tbl, COUNT(*) AS rows FROM FINANCE_CORE_DEV.RAW.T_CUSTOMER
+  SELECT 'T_Customer' AS tbl, COUNT(*) AS rows FROM FINANCE_CORE_DEV_POC.RAW.T_CUSTOMER
   UNION ALL
-  SELECT 'DimCustomer', COUNT(*) FROM FINANCE_CORE_DEV.CLEAN.DIMCUSTOMER
+  SELECT 'DimCustomer', COUNT(*) FROM FINANCE_CORE_DEV_POC.CLEAN.DIMCUSTOMER
   UNION ALL
-  SELECT 'FactDailyTransaction', COUNT(*) FROM FINANCE_CORE_DEV.CONFORMED.FACTDAILYTRANSACTION;
+  SELECT 'FactDailyTransaction', COUNT(*) FROM FINANCE_CORE_DEV_POC.CONFORMED.FACTDAILYTRANSACTION;
 "
 
 # 8. Run lint
-sqlfluff lint banking/ --dialect snowflake --config .sqlfluff
+sqlfluff lint finance-data-platform/ --dialect snowflake --config .sqlfluff
 
 # 9. Verify GitHub secrets (requires gh CLI authenticated)
 gh secret list
@@ -950,6 +950,6 @@ gh pr create --base develop --title "Test: verify CI pipeline" --body "Testing C
 | Schemachange config | `schemachange-config.yml` | Migration tool settings |
 | GitHub secrets | Repository Settings | CI/CD authentication |
 | Lint config | `.sqlfluff` | SQL formatting rules |
-| Migration scripts | `banking/` | Versioned SQL migrations |
+| Migration scripts | `finance-data-platform/` | Versioned SQL migrations |
 | CI workflows | `.github/workflows/*.yml` | Pipeline definitions |
 | Deploy script | `scripts/deploy_schemachange.sh` | Schemachange deployment orchestrator |

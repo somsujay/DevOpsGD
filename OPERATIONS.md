@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project deploys a Teradata-to-Snowflake migration pipeline with a Bronze/Silver/Gold medallion architecture. Schema changes are managed by **schemachange** — an open-source, version-controlled database migration tool for Snowflake. All migrations live in the `banking/` directory and are parameterized via Jinja2 templating for multi-environment support.
+This project deploys a Snowflake data platform with a Bronze/Silver/Gold medallion architecture. Schema changes are managed by **schemachange** — an open-source, version-controlled database migration tool for Snowflake. All migrations live in the `finance-data-platform/` directory and are parameterized via Jinja2 templating for multi-environment support.
 
 ---
 
@@ -42,7 +42,7 @@ All environments are defined in `environments.yml`. Each environment is a **sepa
 
 | Environment | Database | Schemas | Warehouse | Trigger |
 |-------------|----------|---------|-----------|---------|
-| dev | FINANCE_CORE_DEV | RAW, CLEAN, CONFORMED, GOVERNANCE | COMPUTE_WH | Push to `develop` |
+| dev | FINANCE_CORE_DEV_POC | RAW, CLEAN, CONFORMED, GOVERNANCE | COMPUTE_WH | Push to `develop` |
 | stage | FINANCE_CORE_STAGE | RAW, CLEAN, CONFORMED, GOVERNANCE | COMPUTE_WH | Push to `release/*` |
 | prod | FINANCE_CORE_PROD | RAW, CLEAN, CONFORMED, GOVERNANCE | COMPUTE_WH | Tag `v*` |
 
@@ -144,10 +144,10 @@ bash scripts/rollback.sh --env=prod --version=abc123f
 
 ### CI Pipeline Steps
 
-1. **SQL Lint** — `sqlfluff lint banking/` with Snowflake dialect
+1. **SQL Lint** — `sqlfluff lint finance-data-platform/` with Snowflake dialect
 2. **Script Validation** — Verifies migration scripts exist with proper naming (V/R/A prefixes) and `environments.yml` structure
 
-> **Note:** Branch patterns use `feature/**` (double-star) to match nested branch names like `feature/JIRA-123/add-table`. A single `*` only matches one path segment. Additionally, the CI workflow only triggers when changed files fall within the listed `paths` (`banking/**`, `scripts/**`, `tests/**`, `environments.yml`, `schemachange-config.yml`, `.sqlfluff`) — pushes that only modify files outside these paths (e.g., README, docs) will not trigger the lint.
+> **Note:** Branch patterns use `feature/**` (double-star) to match nested branch names like `feature/JIRA-123/add-table`. A single `*` only matches one path segment. Additionally, the CI workflow only triggers when changed files fall within the listed `paths` (`finance-data-platform/**`, `scripts/**`, `tests/**`, `environments.yml`, `schemachange-config.yml`, `.sqlfluff`) — pushes that only modify files outside these paths (e.g., README, docs) will not trigger the lint.
 
 > **Important:** GitHub Actions reads the workflow file from the branch being pushed. If your feature branch was created before `ci.yml` was updated with the `push` trigger, the workflow won't fire because the branch still has the old version of `ci.yml`. Fix by rebasing or merging from `develop`:
 > ```bash
@@ -187,7 +187,7 @@ gh workflow run deploy-prod.yml -f action=rollback -f rollback_version=<tag-or-s
 
 ## Schemachange Migrations
 
-All migrations live in `banking/` and are managed by [schemachange](https://github.com/Snowflake-Labs/schemachange). Schemachange recursively discovers scripts in subdirectories and executes them based on version order.
+All migrations live in `finance-data-platform/` and are managed by [schemachange](https://github.com/Snowflake-Labs/schemachange). Schemachange recursively discovers scripts in subdirectories and executes them based on version order.
 
 ### Script Types
 
@@ -201,32 +201,32 @@ All migrations live in `banking/` and are managed by [schemachange](https://gith
 
 | Version | Location | Objects Created |
 |---------|----------|----------------|
-| V1.0.0 | `_platform/` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA schemas |
-| V1.1.0 | `bronze/retail/` | T_Customer, T_Account, T_Transaction |
-| V1.2.0 | `silver/retail/` | DimCustomer, DimAccount, DimTransactionType, DimDate |
-| V1.3.0 | `gold/retail/` | FactDailyTransaction, FactDailyAgg |
-| V1.4.0 | `governance/` | Masking policies (NAME, EMAIL, PHONE, LOCATION, FINANCIAL_ID, AMOUNT) |
-| V1.5.0 | `governance/` | DATA_QUALITY_LOG table |
-| R__ | `silver/retail/` | SCD-2 (Customer), SCD-1 (Account), dimension loaders |
-| R__ | `gold/retail/` | Fact table loaders, aggregation procedures |
-| R__ | `gold/retail/` | MonthlySpendProfile, TxnTypeTrend views |
+| V1.000.100 | `_platform/` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA schemas |
+| V1.050.100 | `raw/ecomm/` | T_Customer, T_Account, T_Transaction |
+| V1.050.200 | `clean/ecomm/` | DimCustomer, DimAccount, DimTransactionType, DimDate |
+| V1.050.300 | `conformed/ecomm/` | FactDailyTransaction, FactDailyAgg |
+| V1.900.100 | `governance/` | Masking policies (NAME, EMAIL, PHONE, LOCATION, FINANCIAL_ID, AMOUNT) |
+| V1.900.101 | `governance/` | DATA_QUALITY_LOG table |
+| R__ | `clean/ecomm/` | SCD-2 (Customer), SCD-1 (Account), dimension loaders |
+| R__ | `conformed/ecomm/` | Fact table loaders, aggregation procedures |
+| R__ | `conformed/ecomm/` | MonthlySpendProfile, TxnTypeTrend views |
 | R__ | `orchestration/` | Daily_ETL_Run() master orchestrator |
 | R__ | `orchestration/` | TASK_LOAD_CUSTOMER, TASK_LOAD_ACCOUNT, TASK_LOAD_TRANSACTION |
-| R__ | `reference/` | CSV_FORMAT, DATA_STAGE, STREAM_DATA_FILES |
-| R__ | `reference/` | PARQUET_FORMAT, ICEBERG_STAGE |
+| R__ | `artifacts/` | CSV_FORMAT, DATA_STAGE, STREAM_DATA_FILES |
+| R__ | `artifacts/` | PARQUET_FORMAT, ICEBERG_STAGE |
 | R__ | `governance/` | Masking policy definitions & column assignments |
 | R__ | `governance/` | Cleanse_Bronze_Data(), Run_Data_Quality_Checks() |
 | A__ | `governance/` | Schema grants and future privileges |
 
 ### Change History Table
 
-Schemachange tracks applied migrations in `<DATABASE>.METADATA.SCHEMACHANGE_HISTORY`. This table is auto-created on first deploy (`--create-change-history-table`).
+Schemachange tracks applied migrations in `<DATABASE>.METADATA.CHANGE_HISTORY`. This table is auto-created on first deploy (`--create-change-history-table`).
 
 ### Adding a New Migration
 
-1. Create a new file in the appropriate `banking/` subdirectory:
+1. Create a new file in the appropriate `finance-data-platform/` subdirectory:
    ```
-   banking/silver/retail/V1.11.0__add_customer_segment.sql
+   finance-data-platform/clean/ecomm/V1.050.201__add_customer_segment.sql
    ```
 
 2. Use Jinja variables for environment portability:

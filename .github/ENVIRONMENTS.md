@@ -58,7 +58,7 @@ Configure these in **Settings → Environments** in your GitHub repository.
 
 | Environment | Database | Schemas | Warehouse |
 |-------------|----------|---------|-----------|
-| DEV | `FINANCE_CORE_DEV` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA | `COMPUTE_WH` |
+| DEV | `FINANCE_CORE_DEV_POC` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA | `COMPUTE_WH` |
 | STAGE | `FINANCE_CORE_STAGE` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA | `COMPUTE_WH` |
 | PROD | `FINANCE_CORE_PROD` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA | `COMPUTE_WH` |
 
