@@ -13,6 +13,9 @@ environment = "dev"
 warehouse = "COMPUTE_WH"
 role = "SYSADMIN"
 
+[sqlfluff:rules:references.keywords]
+ignore_words = FIRST_NAME,LAST_NAME
+
 [sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = upper
 
