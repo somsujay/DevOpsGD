@@ -26,7 +26,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install sqlfluff
-        run: pip install sqlfluff
+        run: pip install sqlfluff jinja2
 
       - name: Run sqlfluff lint
         run: |

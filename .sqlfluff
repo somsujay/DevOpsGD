@@ -1,7 +1,15 @@
 [sqlfluff]
 dialect = snowflake
-templater = raw
+templater = jinja
 max_line_length = 120
+
+[sqlfluff:templater:jinja:context]
+database = "FINANCE_CORE_DEV"
+raw_schema = "RAW"
+clean_schema = "CLEAN"
+conformed_schema = "CONFORMED"
+governance_schema = "GOVERNANCE"
+environment = "dev"
 
 [sqlfluff:rules:capitalisation.keywords]
 capitalisation_policy = upper
