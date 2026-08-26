@@ -38,6 +38,37 @@ print(config['$ENV']['warehouse'])
 echo "   Database: $DATABASE"
 echo "   Warehouse: $WAREHOUSE"
 
+# Read all schema variables from environments.yml
+RAW_SCHEMA=$(python3 -c "
+import yaml
+with open('environments.yml') as f:
+    config = yaml.safe_load(f)
+print(config['$ENV']['raw_schema'])
+")
+CLEAN_SCHEMA=$(python3 -c "
+import yaml
+with open('environments.yml') as f:
+    config = yaml.safe_load(f)
+print(config['$ENV']['clean_schema'])
+")
+CONFORMED_SCHEMA=$(python3 -c "
+import yaml
+with open('environments.yml') as f:
+    config = yaml.safe_load(f)
+print(config['$ENV']['conformed_schema'])
+")
+GOVERNANCE_SCHEMA=$(python3 -c "
+import yaml
+with open('environments.yml') as f:
+    config = yaml.safe_load(f)
+print(config['$ENV']['governance_schema'])
+")
+
+# Build vars JSON
+VARS_JSON="{\"database\": \"${DATABASE}\", \"warehouse\": \"${WAREHOUSE}\", \"raw_schema\": \"${RAW_SCHEMA}\", \"clean_schema\": \"${CLEAN_SCHEMA}\", \"conformed_schema\": \"${CONFORMED_SCHEMA}\", \"governance_schema\": \"${GOVERNANCE_SCHEMA}\", \"environment\": \"${ENV}\", \"role\": \"SYSADMIN\"}"
+echo "   Vars: $VARS_JSON"
+export SCHEMACHANGE_VARS="$VARS_JSON"
+
 # Run schemachange
 schemachange deploy \
   --root-folder finance-data-platform \
@@ -47,6 +78,7 @@ schemachange deploy \
   --snowflake-warehouse "$WAREHOUSE" \
   --snowflake-database "$DATABASE" \
   --change-history-table "$DATABASE.METADATA.CHANGE_HISTORY" \
-  --create-change-history-table
+  --create-change-history-table \
+  --vars "$VARS_JSON"
 
 echo "==> Deployment complete for $ENV"
