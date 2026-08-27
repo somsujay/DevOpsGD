@@ -5,7 +5,7 @@ set -euo pipefail
 # Protects: develop, release (and release/*), main
 # Usage: bash scripts/setup_rulesets.sh [<owner/repo>]
 # Example: bash scripts/setup_rulesets.sh somsujay/DevOpsGD
-#
+# Testing
 # Prerequisites: gh auth login (with repo admin access)
 
 REPO="${1:-}"
