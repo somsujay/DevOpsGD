@@ -1,6 +1,6 @@
 # Finance Data Platform
 
-Snowflake data platform with Bronze/Silver/Gold medallion architecture, managed by **schemachange** with CI/CD via GitHub Actions.
+Snowflake data platform with RAW/CLEAN/CONFORMED layered architecture, managed by **schemachange** with CI/CD via GitHub Actions.
 
 ## Project Structure
 
@@ -14,20 +14,18 @@ Snowflake data platform with Bronze/Silver/Gold medallion architecture, managed 
 │       ├── deploy-dev.yml
 │       ├── deploy-prod.yml
 │       └── deploy-stage.yml
-├── finance-data-platform/          # schemachange root folder
-│   ├── _platform/                  # Schema setup (runs first)
-│   │   └── V1.000.100__setup_schemas.sql
+├── finance-data-platform/          # schemachange root folder (automated pipeline)
 │   ├── artifacts/                  # Stages, file formats, seed data
 │   │   ├── R__iceberg_objects.sql
 │   │   └── R__seed_data.sql
-│   ├── raw/                        # Bronze layer
+│   ├── raw/                        # RAW layer
 │   │   └── ecomm/
 │   │       └── V1.050.100__create_raw_tables.sql
-│   ├── clean/                      # Silver layer
+│   ├── clean/                      # CLEAN layer
 │   │   └── ecomm/
 │   │       ├── V1.050.200__create_clean_tables.sql
 │   │       └── R__ecomm_clean_procedures.sql
-│   ├── conformed/                  # Gold layer
+│   ├── conformed/                  # CONFORMED layer
 │   │   └── ecomm/
 │   │       ├── V1.050.300__create_conformed_tables.sql
 │   │       ├── R__ecomm_procedures.sql
@@ -35,12 +33,15 @@ Snowflake data platform with Bronze/Silver/Gold medallion architecture, managed 
 │   ├── orchestration/              # Tasks and scheduling
 │   │   ├── R__ingestion_tasks.sql
 │   │   └── R__orchestration.sql
-│   └── governance/                 # Masking, DQ, grants
+│   └── governance/                 # Masking, DQ
 │       ├── V1.900.100__create_masking_policies.sql
 │       ├── V1.900.101__create_data_quality.sql
 │       ├── R__masking_policies.sql
-│       ├── R__data_quality_procedures.sql
-│       └── A__grants.sql
+│       └── R__data_quality_procedures.sql
+├── manual-scripts/                 # Run manually (not in pipeline)
+│   ├── _platform/
+│   │   └── V1.000.100__setup_schemas.sql
+│   └── A__grants.sql
 ├── scripts/
 │   ├── deploy_schemachange.sh
 │   ├── rollback.sh

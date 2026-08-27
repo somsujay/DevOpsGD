@@ -8,7 +8,7 @@
 USE DATABASE {{ database }};
 USE SCHEMA {{ governance_schema }};
 
-CREATE OR REPLACE PROCEDURE {{ governance_schema }}.Cleanse_Bronze_Data()
+CREATE OR REPLACE PROCEDURE {{ governance_schema }}.Cleanse_Raw_Data()
 RETURNS STRING
 LANGUAGE SQL
 AS
@@ -91,10 +91,10 @@ BEGIN
     WHERE T.Transaction_ID = D.Transaction_ID
       AND T._LOADED_AT < D.max_loaded;
 
-    RETURN 'Cleanse_Bronze_Data completed successfully';
+    RETURN 'Cleanse_Raw_Data completed successfully';
 EXCEPTION
     WHEN OTHER THEN
-        RETURN 'ERROR in Cleanse_Bronze_Data: ' || SQLCODE || ' - ' || SQLERRM;
+        RETURN 'ERROR in Cleanse_Raw_Data: ' || SQLCODE || ' - ' || SQLERRM;
 END;
 $$;
 

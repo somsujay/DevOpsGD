@@ -106,10 +106,11 @@ with open('$HOME/.snowflake/connections.toml', 'rb') as f:
 print(c['$CONNECTION']['user'])
 ")
   KEY_PATH=$(python3 -c "
-import tomllib
+import tomllib, os
 with open('$HOME/.snowflake/connections.toml', 'rb') as f:
     c = tomllib.load(f)
-print(c['$CONNECTION']['private_key_path'])
+conn = c['$CONNECTION']
+print(conn.get('private_key_path', os.path.expanduser('~/.snowflake/trial_key.p8')))
 ")
   schemachange deploy \
     --root-folder finance-data-platform \

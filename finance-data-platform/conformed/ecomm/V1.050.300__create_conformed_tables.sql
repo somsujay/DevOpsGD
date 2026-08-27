@@ -1,6 +1,6 @@
 /* ============================================================
-   schemachange Migration: V1.3.0__gold_tables.sql
-   PURPOSE : Gold layer DDL - business-ready fact tables and views
+   schemachange Migration: V1.3.0__conformed_tables.sql
+   PURPOSE : CONFORMED layer DDL - business-ready fact tables and views
    ============================================================ */
 
 USE DATABASE {{ database }};

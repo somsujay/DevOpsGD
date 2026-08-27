@@ -13,8 +13,8 @@ $$
 BEGIN
     LET current_step STRING := '';
 
-    current_step := 'Cleanse_Bronze_Data';
-    CALL {{ governance_schema }}.Cleanse_Bronze_Data();
+    current_step := 'Cleanse_Raw_Data';
+    CALL {{ governance_schema }}.Cleanse_Raw_Data();
 
     current_step := 'Close_Current_DimCustomer_Record';
     CALL {{ clean_schema }}.Close_Current_DimCustomer_Record();

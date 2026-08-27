@@ -27,25 +27,25 @@ with open('environments.yml') as f:
 print(config['$ENV']['warehouse'])
 ")
 
-# Set up Snowflake connection for CI
-if [[ -n "${SNOWFLAKE_ACCOUNT:-}" ]]; then
+# Determine connection
+if [[ -n "${SNOWFLAKE_ACCOUNT:-}" && -n "${SNOWFLAKE_USER:-}" ]]; then
+  # CI mode: set up connection from env vars
   mkdir -p ~/.snowflake && chmod 700 ~/.snowflake
   if [[ -n "${SNOWFLAKE_PRIVATE_KEY:-}" && ! -f ~/.snowflake/ci_key.p8 ]]; then
     echo "$SNOWFLAKE_PRIVATE_KEY" > ~/.snowflake/ci_key.p8
     chmod 600 ~/.snowflake/ci_key.p8
   fi
-  cat > ~/.snowflake/connections.toml <<TOML
-[default]
-account = "${SNOWFLAKE_ACCOUNT}"
-user = "${SNOWFLAKE_USER}"
-authenticator = "SNOWFLAKE_JWT"
-private_key_path = "${HOME}/.snowflake/ci_key.p8"
-warehouse = "${WAREHOUSE}"
-TOML
-  chmod 600 ~/.snowflake/connections.toml
-  CONNECTION="default"
+  # Use snow sql with inline params
+  SNOW_CMD="snow sql --account $SNOWFLAKE_ACCOUNT --user $SNOWFLAKE_USER --authenticator SNOWFLAKE_JWT --private-key-path $HOME/.snowflake/ci_key.p8"
 else
-  CONNECTION="MY_TRIAL_ACCOUNT"
+  # Local mode: use connection from environments.yml
+  CONNECTION=$(python3 -c "
+import yaml
+with open('environments.yml') as f:
+    config = yaml.safe_load(f)
+print(config['$ENV']['connection'])
+")
+  SNOW_CMD="snow sql -c $CONNECTION"
 fi
 
 echo "==> Running smoke tests against $ENV ($DATABASE)"
@@ -54,7 +54,7 @@ echo "==> Running smoke tests against $ENV ($DATABASE)"
 FAILED=0
 for SCHEMA in RAW CLEAN CONFORMED GOVERNANCE; do
   echo -n "   Checking $DATABASE.$SCHEMA... "
-  if snow sql -c "$CONNECTION" \
+  if $SNOW_CMD \
     --database "$DATABASE" \
     --warehouse "$WAREHOUSE" \
     --schema "$SCHEMA" \

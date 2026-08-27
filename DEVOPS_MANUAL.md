@@ -33,6 +33,14 @@
 └──────────────────────────────────────────────────────────────────────────────┘
 ```
 
+**PR Approval Requirements:**
+
+| Merge Path | Approvals Required |
+|---|---|
+| `feature/*` → `develop` | 1 approval |
+| `develop` → `release/*` | 1 approval |
+| `release/*` → `main` (prod) | 2 approvals |
+
 ---
 
 ## 2. Project Structure

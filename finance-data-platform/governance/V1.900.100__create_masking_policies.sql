@@ -65,7 +65,7 @@ CASE
     ELSE 0.00
 END;
 
--- Apply policies - Bronze layer
+-- Apply policies - RAW layer
 ALTER TABLE {{ raw_schema }}.T_CUSTOMER
 MODIFY COLUMN FIRST_NAME SET MASKING POLICY {{ governance_schema }}.MASK_NAME;
 ALTER TABLE {{ raw_schema }}.T_CUSTOMER
@@ -84,7 +84,7 @@ MODIFY COLUMN ACCOUNT_ID SET MASKING POLICY {{ governance_schema }}.MASK_FINANCI
 ALTER TABLE {{ raw_schema }}.T_TRANSACTION
 MODIFY COLUMN AMOUNT SET MASKING POLICY {{ governance_schema }}.MASK_AMOUNT;
 
--- Apply policies - Silver layer
+-- Apply policies - CLEAN layer
 ALTER TABLE {{ clean_schema }}.DIMCUSTOMER
 MODIFY COLUMN FIRST_NAME SET MASKING POLICY {{ governance_schema }}.MASK_NAME;
 ALTER TABLE {{ clean_schema }}.DIMCUSTOMER
@@ -96,7 +96,7 @@ MODIFY COLUMN CITY SET MASKING POLICY {{ governance_schema }}.MASK_LOCATION;
 ALTER TABLE {{ clean_schema }}.DIMCUSTOMER
 MODIFY COLUMN STATE_PROVINCE SET MASKING POLICY {{ governance_schema }}.MASK_LOCATION;
 
--- Apply policies - Gold layer
+-- Apply policies - CONFORMED layer
 ALTER TABLE {{ conformed_schema }}.FACTDAILYTRANSACTION
 MODIFY COLUMN AMOUNT SET MASKING POLICY {{ governance_schema }}.MASK_AMOUNT;
 ALTER TABLE {{ conformed_schema }}.FACTDAILYAGG

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project deploys a Snowflake data platform with a Bronze/Silver/Gold medallion architecture. Schema changes are managed by **schemachange** — an open-source, version-controlled database migration tool for Snowflake. All migrations live in the `finance-data-platform/` directory and are parameterized via Jinja2 templating for multi-environment support.
+This project deploys a Snowflake data platform with a RAW/CLEAN/CONFORMED layered architecture. Schema changes are managed by **schemachange** — an open-source, version-controlled database migration tool for Snowflake. All migrations live in the `finance-data-platform/` directory and are parameterized via Jinja2 templating for multi-environment support.
 
 ---
 
@@ -215,15 +215,14 @@ All migrations live in `finance-data-platform/` and are managed by [schemachange
 
 | Prefix | Behavior | Example |
 |--------|----------|---------|
-| `V` | Versioned — runs exactly once, in version order | `V1.2.0__silver_tables.sql` |
-| `R` | Repeatable — re-runs whenever file content changes (checksum) | `R__gold_views.sql` |
+| `V` | Versioned — runs exactly once, in version order | `V1.050.200__create_clean_tables.sql` |
+| `R` | Repeatable — re-runs whenever file content changes (checksum) | `R__ecomm_views.sql` |
 | `A` | Always — runs on every deployment | `A__grants.sql` |
 
 ### Migration Inventory
 
 | Version | Location | Objects Created |
 |---------|----------|----------------|
-| V1.000.100 | `_platform/` | RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA schemas |
 | V1.050.100 | `raw/ecomm/` | T_Customer, T_Account, T_Transaction |
 | V1.050.200 | `clean/ecomm/` | DimCustomer, DimAccount, DimTransactionType, DimDate |
 | V1.050.300 | `conformed/ecomm/` | FactDailyTransaction, FactDailyAgg |
@@ -237,8 +236,24 @@ All migrations live in `finance-data-platform/` and are managed by [schemachange
 | R__ | `artifacts/` | CSV_FORMAT, DATA_STAGE, STREAM_DATA_FILES |
 | R__ | `artifacts/` | PARQUET_FORMAT, ICEBERG_STAGE |
 | R__ | `governance/` | Masking policy definitions & column assignments |
-| R__ | `governance/` | Cleanse_Bronze_Data(), Run_Data_Quality_Checks() |
-| A__ | `governance/` | Schema grants and future privileges |
+| R__ | `governance/` | Cleanse_Raw_Data(), Run_Data_Quality_Checks() |
+
+### Manual Scripts (not in pipeline)
+
+These scripts are run manually before the first deploy or when permissions need updating:
+
+| Script | Location | Purpose |
+|--------|----------|---------|
+| `V1.000.100__setup_schemas.sql` | `manual-scripts/_platform/` | Creates RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA schemas |
+| `A__grants.sql` | `manual-scripts/` | Applies grants and future privileges to roles |
+
+```bash
+# Run platform setup (one-time, before first deploy)
+snow sql -c MY_TRIAL_ACCOUNT -f manual-scripts/_platform/V1.000.100__setup_schemas.sql
+
+# Run grants (as needed after permission changes)
+snow sql -c MY_TRIAL_ACCOUNT -f manual-scripts/A__grants.sql
+```
 
 ### Change History Table
 

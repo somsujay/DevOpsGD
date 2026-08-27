@@ -1,6 +1,6 @@
 /* ============================================================
-   schemachange Repeatable: R__gold_procedures.sql
-   PURPOSE : Gold layer procedures - fact table loading
+   schemachange Repeatable: R__conformed_procedures.sql
+   PURPOSE : CONFORMED layer procedures - fact table loading
    Re-runs automatically when this file changes. Sujay Som Again
    ============================================================ */
 
@@ -115,8 +115,8 @@ $$
 BEGIN
     LET current_step STRING := '';
 
-    current_step := 'Cleanse_Bronze_Data';
-    CALL {{ governance_schema }}.Cleanse_Bronze_Data();
+    current_step := 'Cleanse_Raw_Data';
+    CALL {{ governance_schema }}.Cleanse_Raw_Data();
 
     current_step := 'Close_Current_DimCustomer_Record';
     CALL {{ clean_schema }}.Close_Current_DimCustomer_Record();
@@ -154,8 +154,8 @@ $$
 BEGIN
     LET current_step STRING := '';
 
-    current_step := 'Cleanse_Bronze_Data';
-    CALL {{ governance_schema }}.Cleanse_Bronze_Data();
+    current_step := 'Cleanse_Raw_Data';
+    CALL {{ governance_schema }}.Cleanse_Raw_Data();
 
     current_step := 'Close_Current_DimCustomer_Record';
     CALL {{ clean_schema }}.Close_Current_DimCustomer_Record();

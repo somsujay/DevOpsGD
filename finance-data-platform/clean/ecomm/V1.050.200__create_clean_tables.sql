@@ -1,6 +1,6 @@
 /* ============================================================
-   schemachange Migration: V1.2.0__silver_tables.sql
-   PURPOSE : Silver layer DDL - cleansed & conformed dimensions
+   schemachange Migration: V1.2.0__clean_tables.sql
+   PURPOSE : CLEAN layer DDL - cleansed & conformed dimensions
    ============================================================ */
 
 USE DATABASE {{ database }};

@@ -16,7 +16,7 @@ ERROR_ON_COLUMN_COUNT_MISMATCH = FALSE;
 CREATE OR REPLACE STAGE {{ raw_schema }}.DATA_STAGE
     FILE_FORMAT = {{ raw_schema }}.CSV_FORMAT
     DIRECTORY = (ENABLE = TRUE) -- noqa
-    COMMENT = 'Shared named stage for all Bronze CSV ingestion';
+    COMMENT = 'Shared named stage for all RAW CSV ingestion';
 
 CREATE OR REPLACE STREAM {{ raw_schema }}.STREAM_DATA_FILES
     ON STAGE {{ raw_schema }}.DATA_STAGE;

@@ -1,6 +1,6 @@
 /* ============================================================
-   schemachange Repeatable: R__gold_views.sql
-   PURPOSE : Gold layer views - recreated whenever this file changes
+   schemachange Repeatable: R__conformed_views.sql
+   PURPOSE : CONFORMED layer views - recreated whenever this file changes
    ============================================================ */
 
 USE DATABASE {{ database }};

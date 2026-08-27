@@ -1,6 +1,6 @@
 /* ============================================================
-   schemachange Repeatable: R__silver_procedures.sql
-   PURPOSE : Silver layer procedures - dimension loading
+   schemachange Repeatable: R__clean_procedures.sql
+   PURPOSE : CLEAN layer procedures - dimension loading
    Re-runs automatically when this file changes.
    ============================================================ */
 
