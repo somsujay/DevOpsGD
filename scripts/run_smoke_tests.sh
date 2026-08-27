@@ -29,14 +29,23 @@ print(config['$ENV']['warehouse'])
 
 # Determine connection
 if [[ -n "${SNOWFLAKE_ACCOUNT:-}" && -n "${SNOWFLAKE_USER:-}" ]]; then
-  # CI mode: set up connection from env vars
+  # CI mode: create connection from env vars
   mkdir -p ~/.snowflake && chmod 700 ~/.snowflake
   if [[ -n "${SNOWFLAKE_PRIVATE_KEY:-}" && ! -f ~/.snowflake/ci_key.p8 ]]; then
     echo "$SNOWFLAKE_PRIVATE_KEY" > ~/.snowflake/ci_key.p8
     chmod 600 ~/.snowflake/ci_key.p8
   fi
-  # Use snow sql with inline params
-  SNOW_CMD="snow sql --account $SNOWFLAKE_ACCOUNT --user $SNOWFLAKE_USER --authenticator SNOWFLAKE_JWT --private-key-path $HOME/.snowflake/ci_key.p8"
+  cat > ~/.snowflake/connections.toml <<TOML
+[ci]
+account = "${SNOWFLAKE_ACCOUNT}"
+user = "${SNOWFLAKE_USER}"
+authenticator = "SNOWFLAKE_JWT"
+private_key_path = "${HOME}/.snowflake/ci_key.p8"
+warehouse = "${WAREHOUSE}"
+database = "${DATABASE}"
+TOML
+  chmod 600 ~/.snowflake/connections.toml
+  SNOW_CMD="snow sql -c ci"
 else
   # Local mode: use connection from environments.yml
   CONNECTION=$(python3 -c "
