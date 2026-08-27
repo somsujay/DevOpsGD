@@ -26,7 +26,7 @@ Set these **repository secrets** (Settings > Secrets and variables > Actions):
 | Secret | Description |
 |--------|-------------|
 | `SNOWFLAKE_ACCOUNT` | Account identifier (e.g., `KXAXARZ-GW22129`) |
-| `SNOWFLAKE_USER` | Snowflake username (e.g., `SOMSUJAY`) |
+| `SNOWFLAKE_USER` | Snowflake username (e.g., `SUJAYSOM`) |
 | `SNOWFLAKE_PRIVATE_KEY` | Contents of the `.p8` private key file |
 
 For the **production** environment, also set:
@@ -362,14 +362,14 @@ CONFORMED (Business Facts)
 
 2. Register public key in Snowflake:
    ```sql
-   ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY='<paste public key without headers>';
+   ALTER USER SUJAYSOM SET RSA_PUBLIC_KEY='<paste public key without headers>';
    ```
 
 3. Configure `~/.snowflake/connections.toml`:
    ```toml
    [MY_TRIAL_ACCOUNT]
    account = "KXAXARZ-GW22129"
-   user = "SOMSUJAY"
+   user = "SUJAYSOM"
    authenticator = "SNOWFLAKE_JWT"
    private_key_path = "/path/to/.snowflake/trial_key.p8"
    warehouse = "COMPUTE_WH"

@@ -177,21 +177,78 @@ The `branch-guard.yml` workflow automatically blocks PRs that don't follow the a
 | Source Branch | Target Branch | Allowed |
 |---------------|---------------|---------|
 | `feature` / `feature/*` | `develop` | Yes |
-| `develop` | `release/*` | Yes |
-| `release/*` | `main` | Yes |
-| `hotfix/*` | `main` | Yes |
+| `develop` | `release` / `release/*` | Yes |
+| `release` / `release/*` | `main` | Yes |
+| `hotfix` / `hotfix/*` | `main` | Yes |
 | Any other combination | — | **Blocked** |
 
 **File:** `.github/workflows/branch-guard.yml`
 
-**Making it a required check (recommended):**
+### 3.7 Branch Rulesets (Hard Enforcement)
 
-1. Go to GitHub repo Settings > Branches
-2. Add/edit branch protection rules for `develop`, `release/*`, and `main`
-3. Enable "Require status checks to pass before merging"
-4. Search for and select **"Enforce Branching Rules"**
+Branch rulesets make the branch-guard check **mandatory** — PRs cannot be merged unless the check passes. This is configured via GitHub repository rulesets (not branch protection rules).
 
-This prevents PRs from being merged even if someone force-approves a review.
+**Rulesets configured:**
+
+| Ruleset | Branches Protected | Effect |
+|---------|-------------------|--------|
+| Protect develop | `develop` | Only `feature/*` can merge into develop |
+| Protect release branches | `release`, `release/*` | Only `develop` can merge into release |
+| Protect main | `main` | Only `release/*` or `hotfix/*` can merge into main |
+
+**All rulesets enforce:**
+- Require a pull request (no direct pushes)
+- Require "Enforce Branching Rules" status check to pass
+- Block branch deletion
+- Block force pushes
+
+**Setup (one-time):**
+
+```bash
+bash scripts/setup_rulesets.sh
+```
+
+This creates all three rulesets via the GitHub API. Requires `gh` CLI authenticated with admin access.
+
+**Manual setup via GitHub CLI:**
+
+```bash
+# Example: protect release branches
+gh api repos/somsujay/DevOpsGD/rulesets --method POST --input - <<'EOF'
+{
+  "name": "Protect release branches",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["refs/heads/release", "refs/heads/release/*"],
+      "exclude": []
+    }
+  },
+  "rules": [
+    { "type": "deletion" },
+    { "type": "non_fast_forward" },
+    { "type": "pull_request" },
+    { "type": "required_status_checks", "parameters": { "required_status_checks": [{ "context": "Enforce Branching Rules" }], "strict_required_status_checks_policy": true } }
+  ]
+}
+EOF
+```
+
+**Managing rulesets:**
+
+```bash
+# List all rulesets
+gh api repos/somsujay/DevOpsGD/rulesets --jq '.[] | "\(.id) \(.name)"'
+
+# Delete a ruleset by ID
+gh api repos/somsujay/DevOpsGD/rulesets/<ID> --method DELETE
+
+# View ruleset details
+gh api repos/somsujay/DevOpsGD/rulesets/<ID> | jq
+```
+
+**Verify at:** https://github.com/somsujay/DevOpsGD/settings/rules
 
 ---
 
@@ -204,7 +261,7 @@ This prevents PRs from being merged even if someone force-approves a review.
 | Secret | Value | Used By |
 |--------|-------|---------|
 | `SNOWFLAKE_ACCOUNT` | `KXAXARZ-GW22129` | deploy-dev, deploy-stage |
-| `SNOWFLAKE_USER` | `SOMSUJAY` | deploy-dev, deploy-stage |
+| `SNOWFLAKE_USER` | `SUJAYSOM` | deploy-dev, deploy-stage |
 | `SNOWFLAKE_PRIVATE_KEY` | RSA private key (PEM) | deploy-dev, deploy-stage |
 
 #### Production
@@ -212,10 +269,80 @@ This prevents PRs from being merged even if someone force-approves a review.
 | Secret | Value | Used By |
 |--------|-------|---------|
 | `SNOWFLAKE_PROD_ACCOUNT` | `KXAXARZ-GW22129` | deploy-prod |
-| `SNOWFLAKE_PROD_USER` | `SOMSUJAY` | deploy-prod |
+| `SNOWFLAKE_PROD_USER` | `SUJAYSOM` | deploy-prod |
 | `SNOWFLAKE_PROD_PRIVATE_KEY` | RSA private key (PEM) | deploy-prod |
 
-### 4.2 Key Rotation Procedure
+### 4.2 Creating SNOWFLAKE_PRIVATE_KEY (First-Time Setup)
+
+#### Step 1: Generate RSA Key Pair
+
+```bash
+mkdir -p ~/.snowflake && chmod 700 ~/.snowflake
+
+# Generate private key (unencrypted PKCS8 format, required by Snowflake)
+openssl genrsa 2048 | openssl pkcs8 -topk8 -inform PEM -out ~/.snowflake/rsa_key.p8 -nocrypt
+
+# Extract the public key
+openssl rsa -in ~/.snowflake/rsa_key.p8 -pubout -out ~/.snowflake/rsa_key.pub
+
+# Secure the private key
+chmod 600 ~/.snowflake/rsa_key.p8
+```
+
+#### Step 2: Register Public Key with Snowflake User
+
+Extract the key body (without header/footer lines):
+
+```bash
+grep -v "^---" ~/.snowflake/rsa_key.pub | tr -d '\n'
+```
+
+Then in Snowflake:
+
+```sql
+ALTER USER SUJAYSOM SET RSA_PUBLIC_KEY='<paste the base64 content here>';
+```
+
+#### Step 3: Verify Key-Pair Auth Works Locally
+
+```bash
+snow connection test -c MY_TRIAL_ACCOUNT
+```
+
+Expected output: `Status: OK`
+
+#### Step 4: Store Private Key in GitHub Secrets
+
+Copy the **entire** content of the private key file:
+
+```bash
+cat ~/.snowflake/rsa_key.p8
+```
+
+Then store it as a GitHub repository secret:
+
+**Via GitHub CLI:**
+```bash
+gh secret set SNOWFLAKE_PRIVATE_KEY < ~/.snowflake/rsa_key.p8
+```
+
+**Via GitHub UI:**
+1. Go to repo → **Settings** → **Secrets and variables** → **Actions**
+2. Click **New repository secret**
+3. Name: `SNOWFLAKE_PRIVATE_KEY`
+4. Value: paste the entire content of `rsa_key.p8` (including `-----BEGIN PRIVATE KEY-----` and `-----END PRIVATE KEY-----` lines)
+5. Click **Add secret**
+
+#### Step 5: Verify CI Uses the Key
+
+Push a change to trigger a workflow and confirm the deploy step authenticates successfully.
+
+**Important notes:**
+- Never commit `rsa_key.p8` to the repository
+- The `.gitignore` already excludes `~/.snowflake/` but keep the key out of any project directory
+- For production, generate a separate key pair and store as `SNOWFLAKE_PROD_PRIVATE_KEY`
+
+### 4.3 Key Rotation Procedure
 
 1. Generate new key pair:
    ```bash
@@ -225,7 +352,7 @@ This prevents PRs from being merged even if someone force-approves a review.
 
 2. Register new key in Snowflake (use RSA_PUBLIC_KEY_2 for zero-downtime rotation):
    ```sql
-   ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY_2='<new-public-key>';
+   ALTER USER SUJAYSOM SET RSA_PUBLIC_KEY_2='<new-public-key>';
    ```
 
 3. Update GitHub secret `SNOWFLAKE_PRIVATE_KEY` with new key contents.
@@ -234,14 +361,92 @@ This prevents PRs from being merged even if someone force-approves a review.
 
 5. Remove old key:
    ```sql
-   ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY='<new-public-key>';
-   ALTER USER SOMSUJAY UNSET RSA_PUBLIC_KEY_2;
+   ALTER USER SUJAYSOM SET RSA_PUBLIC_KEY='<new-public-key>';
+   ALTER USER SUJAYSOM UNSET RSA_PUBLIC_KEY_2;
    ```
 
 ### 4.3 Key Rotation Schedule
 
 - Rotate every 90 days
 - Rotate immediately if any key exposure is suspected
+
+### 4.4 Alternative: GitHub OIDC + Snowflake External OAuth (No Private Key)
+
+This approach eliminates all long-lived secrets (`SNOWFLAKE_PRIVATE_KEY`). GitHub Actions authenticates to Snowflake using short-lived OIDC tokens — no keys or passwords stored anywhere.
+
+**How it works:**
+1. GitHub Actions generates an OIDC token for each workflow run (valid ~15 minutes)
+2. Snowflake validates the token via an External OAuth security integration
+3. No secrets to rotate or expire
+
+**Prerequisites:**
+- Snowflake Enterprise Edition or higher (required for External OAuth)
+- Repository admin access to configure OIDC permissions
+
+#### Step 1: Create External OAuth Integration in Snowflake
+
+```sql
+CREATE SECURITY INTEGRATION github_actions_oidc
+  TYPE = EXTERNAL_OAUTH
+  ENABLED = TRUE
+  EXTERNAL_OAUTH_TYPE = CUSTOM
+  EXTERNAL_OAUTH_ISSUER = 'https://token.actions.githubusercontent.com'
+  EXTERNAL_OAUTH_JWS_KEYS_URL = 'https://token.actions.githubusercontent.com/.well-known/jwks'
+  EXTERNAL_OAUTH_AUDIENCE_LIST = ('https://github.com/somsujay')
+  EXTERNAL_OAUTH_TOKEN_USER_MAPPING_CLAIM = 'actor'
+  EXTERNAL_OAUTH_SNOWFLAKE_USER_MAPPING_ATTRIBUTE = 'LOGIN_NAME';
+```
+
+#### Step 2: Update Workflow to Use OIDC
+
+Add OIDC permissions and token retrieval to your deploy workflows:
+
+```yaml
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Get OIDC token
+        id: oidc
+        run: |
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://github.com/somsujay" | jq -r '.value')
+          echo "::add-mask::$TOKEN"
+          echo "SNOWFLAKE_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+      - name: Deploy
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_AUTHENTICATOR: oauth
+          SNOWFLAKE_TOKEN: ${{ env.SNOWFLAKE_TOKEN }}
+        run: bash scripts/deploy_schemachange.sh --env=dev
+```
+
+#### Step 3: Secrets Required (reduced)
+
+| Secret | Value | Notes |
+|--------|-------|-------|
+| `SNOWFLAKE_ACCOUNT` | Account identifier | Still needed |
+| ~~`SNOWFLAKE_USER`~~ | — | Derived from OIDC token claim |
+| ~~`SNOWFLAKE_PRIVATE_KEY`~~ | — | No longer needed |
+
+#### Comparison: Key-Pair vs OIDC
+
+| Aspect | Key-Pair Auth (current) | OIDC / External OAuth |
+|--------|------------------------|----------------------|
+| Secrets stored | 3 per environment | 1 (account only) |
+| Rotation needed | Every 90 days | Never |
+| Expiry risk | Yes (key must be rotated) | No |
+| Setup complexity | Simple | Moderate |
+| Snowflake edition | Any | Enterprise+ |
+| Scope | Any client with the key | Only this repo's workflows |
 
 ---
 
@@ -254,7 +459,7 @@ The primary deployment method uses `scripts/deploy_schemachange.sh`, which invok
 ```bash
 # Deploy to dev (local)
 export SNOWFLAKE_ACCOUNT=KXAXARZ-GW22129
-export SNOWFLAKE_USER=SOMSUJAY
+export SNOWFLAKE_USER=SUJAYSOM
 bash scripts/deploy_schemachange.sh --env=dev
 
 # Deploy to stage
@@ -616,7 +821,7 @@ For production hardening, create dedicated roles:
 CREATE ROLE IF NOT EXISTS DEPLOY_ROLE;
 GRANT USAGE ON WAREHOUSE COMPUTE_WH TO ROLE DEPLOY_ROLE;
 GRANT ALL ON DATABASE FINANCE_CORE_PROD TO ROLE DEPLOY_ROLE;
-GRANT ROLE DEPLOY_ROLE TO USER SOMSUJAY;
+GRANT ROLE DEPLOY_ROLE TO USER SUJAYSOM;
 
 -- Read-only role (for dashboards)
 CREATE ROLE IF NOT EXISTS READER_ROLE;
@@ -807,7 +1012,7 @@ grep -v "^---" ~/.snowflake/trial_key.pub | tr -d '\n'
 ```
 
 ```sql
-ALTER USER SOMSUJAY SET RSA_PUBLIC_KEY='<paste-key-body-here>';
+ALTER USER SUJAYSOM SET RSA_PUBLIC_KEY='<paste-key-body-here>';
 ```
 
 #### Step 4: Configure connections.toml
@@ -817,7 +1022,7 @@ Create/edit `~/.snowflake/connections.toml`:
 ```toml
 [MY_TRIAL_ACCOUNT]
 account = "KXAXARZ-GW22129"
-user = "SOMSUJAY"
+user = "SUJAYSOM"
 authenticator = "SNOWFLAKE_JWT"
 private_key_path = "/Users/<your-username>/.snowflake/trial_key.p8"
 warehouse = "COMPUTE_WH"
@@ -852,11 +1057,11 @@ Navigate to **Settings > Environments** and create:
 
 ```
 SNOWFLAKE_ACCOUNT        = KXAXARZ-GW22129
-SNOWFLAKE_USER           = SOMSUJAY
+SNOWFLAKE_USER           = SUJAYSOM
 SNOWFLAKE_PRIVATE_KEY    = <contents of ~/.snowflake/trial_key.p8>
 
 SNOWFLAKE_PROD_ACCOUNT   = KXAXARZ-GW22129
-SNOWFLAKE_PROD_USER      = SOMSUJAY
+SNOWFLAKE_PROD_USER      = SUJAYSOM
 SNOWFLAKE_PROD_PRIVATE_KEY = <contents of ~/.snowflake/trial_key.p8>
 ```
 
