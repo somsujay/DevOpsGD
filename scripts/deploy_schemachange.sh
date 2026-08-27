@@ -69,16 +69,58 @@ VARS_JSON="{\"database\": \"${DATABASE}\", \"warehouse\": \"${WAREHOUSE}\", \"ra
 echo "   Vars: $VARS_JSON"
 export SCHEMACHANGE_VARS="$VARS_JSON"
 
-# Run schemachange
-schemachange deploy \
-  --root-folder finance-data-platform \
-  --snowflake-account "$SNOWFLAKE_ACCOUNT" \
-  --snowflake-user "$SNOWFLAKE_USER" \
-  --snowflake-private-key-path ~/.snowflake/ci_key.p8 \
-  --snowflake-warehouse "$WAREHOUSE" \
-  --snowflake-database "$DATABASE" \
-  --change-history-table "$DATABASE.METADATA.CHANGE_HISTORY" \
-  --create-change-history-table \
-  --vars "$VARS_JSON"
+# Determine authentication method
+# CI: uses SNOWFLAKE_ACCOUNT/USER/PRIVATE_KEY env vars
+# Local: reads from environments.yml connection + ~/.snowflake/
+if [[ -n "${SNOWFLAKE_ACCOUNT:-}" && -n "${SNOWFLAKE_USER:-}" ]]; then
+  echo "   Auth: CI mode (env vars)"
+  PRIVATE_KEY_PATH="${SNOWFLAKE_PRIVATE_KEY_PATH:-$HOME/.snowflake/ci_key.p8}"
+  schemachange deploy \
+    --root-folder finance-data-platform \
+    --snowflake-account "$SNOWFLAKE_ACCOUNT" \
+    --snowflake-user "$SNOWFLAKE_USER" \
+    --snowflake-private-key-path "$PRIVATE_KEY_PATH" \
+    --snowflake-warehouse "$WAREHOUSE" \
+    --snowflake-database "$DATABASE" \
+    --change-history-table "$DATABASE.METADATA.CHANGE_HISTORY" \
+    --create-change-history-table \
+    --vars "$VARS_JSON"
+else
+  echo "   Auth: Local mode (connections.toml)"
+  CONNECTION=$(python3 -c "
+import yaml
+with open('environments.yml') as f:
+    config = yaml.safe_load(f)
+print(config['$ENV']['connection'])
+")
+  ACCOUNT=$(python3 -c "
+import tomllib
+with open('$HOME/.snowflake/connections.toml', 'rb') as f:
+    c = tomllib.load(f)
+print(c['$CONNECTION']['account'])
+")
+  USER=$(python3 -c "
+import tomllib
+with open('$HOME/.snowflake/connections.toml', 'rb') as f:
+    c = tomllib.load(f)
+print(c['$CONNECTION']['user'])
+")
+  KEY_PATH=$(python3 -c "
+import tomllib
+with open('$HOME/.snowflake/connections.toml', 'rb') as f:
+    c = tomllib.load(f)
+print(c['$CONNECTION']['private_key_path'])
+")
+  schemachange deploy \
+    --root-folder finance-data-platform \
+    --snowflake-account "$ACCOUNT" \
+    --snowflake-user "$USER" \
+    --snowflake-private-key-path "$KEY_PATH" \
+    --snowflake-warehouse "$WAREHOUSE" \
+    --snowflake-database "$DATABASE" \
+    --change-history-table "$DATABASE.METADATA.CHANGE_HISTORY" \
+    --create-change-history-table \
+    --vars "$VARS_JSON"
+fi
 
 echo "==> Deployment complete for $ENV"
