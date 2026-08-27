@@ -244,15 +244,15 @@ These scripts are run manually before the first deploy or when permissions need 
 
 | Script | Location | Purpose |
 |--------|----------|---------|
-| `V1.000.100__setup_schemas.sql` | `manual-scripts/_platform/` | Creates RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA schemas |
-| `A__grants.sql` | `manual-scripts/` | Applies grants and future privileges to roles |
+| `V1.000.100__setup_schemas.sql` | `scripts/manual-scripts/_platform/` | Creates RAW, CLEAN, CONFORMED, GOVERNANCE, METADATA schemas |
+| `A__grants.sql` | `scripts/manual-scripts/` | Applies grants and future privileges to roles |
 
 ```bash
 # Run platform setup (one-time, before first deploy)
-snow sql -c MY_TRIAL_ACCOUNT -f manual-scripts/_platform/V1.000.100__setup_schemas.sql
+snow sql -c MY_TRIAL_ACCOUNT -f scripts/manual-scripts/_platform/V1.000.100__setup_schemas.sql
 
 # Run grants (as needed after permission changes)
-snow sql -c MY_TRIAL_ACCOUNT -f manual-scripts/A__grants.sql
+snow sql -c MY_TRIAL_ACCOUNT -f scripts/manual-scripts/A__grants.sql
 ```
 
 ### Change History Table

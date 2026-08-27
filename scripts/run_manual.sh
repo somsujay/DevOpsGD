@@ -105,14 +105,14 @@ print(content)
 
 case "$SCRIPT" in
   platform)
-    run_sql_file "manual-scripts/_platform/V1.000.100__setup_schemas.sql" "Schema setup"
+    run_sql_file "scripts/manual-scripts/_platform/V1.000.100__setup_schemas.sql" "Schema setup"
     ;;
   grants)
-    run_sql_file "manual-scripts/A__grants.sql" "Apply grants"
+    run_sql_file "scripts/manual-scripts/A__grants.sql" "Apply grants"
     ;;
   all)
-    run_sql_file "manual-scripts/_platform/V1.000.100__setup_schemas.sql" "Schema setup"
-    run_sql_file "manual-scripts/A__grants.sql" "Apply grants"
+    run_sql_file "scripts/manual-scripts/_platform/V1.000.100__setup_schemas.sql" "Schema setup"
+    run_sql_file "scripts/manual-scripts/A__grants.sql" "Apply grants"
     ;;
   *)
     echo "ERROR: Unknown script '$SCRIPT'. Use: platform, grants, or all"

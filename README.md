@@ -38,7 +38,7 @@ Snowflake data platform with RAW/CLEAN/CONFORMED layered architecture, managed b
 │       ├── V1.900.101__create_data_quality.sql
 │       ├── R__masking_policies.sql
 │       └── R__data_quality_procedures.sql
-├── manual-scripts/                 # Run manually (not in pipeline)
+├── scripts/manual-scripts/                 # Run manually (not in pipeline)
 │   ├── _platform/
 │   │   └── V1.000.100__setup_schemas.sql
 │   └── A__grants.sql
