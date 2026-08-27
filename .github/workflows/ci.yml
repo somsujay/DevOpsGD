@@ -1,0 +1,73 @@
+name: CI – Lint & Validate
+
+on:
+  push:
+    branches: ['feature', 'feature/**']
+  pull_request:
+    branches: [develop, release, 'release/*', main]
+    paths:
+      - 'finance-data-platform/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'environments.yml'
+      - 'schemachange-config.yml'
+      - '.sqlfluff'
+
+jobs:
+  sql-lint:
+    name: SQL Lint (sqlfluff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff jinja2
+
+      - name: Run sqlfluff lint
+        run: |
+          sqlfluff lint finance-data-platform/ \
+            --dialect snowflake \
+            --config .sqlfluff
+
+  validate-scripts:
+    name: Validate Deployment Scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check scripts are executable-ready
+        run: |
+          echo ">> Verifying migration scripts exist and follow naming conventions..."
+          V_COUNT=$(find finance-data-platform -name 'V*.sql' | wc -l)
+          if [[ "$V_COUNT" -eq 0 ]]; then
+            echo "ERROR: No versioned migration scripts (V*.sql) found"
+            exit 1
+          fi
+          echo "   Found $V_COUNT versioned migration(s)"
+          for f in $(find finance-data-platform -name 'V*.sql' -o -name 'R*.sql' -o -name 'A*.sql'); do
+            if [[ ! -s "$f" ]]; then
+              echo "ERROR: $f is empty"
+              exit 1
+            fi
+            echo "   OK: $(basename $f)"
+          done
+
+      - name: Validate environments.yml structure
+        run: |
+          for env in dev stage prod; do
+            if ! grep -q "^${env}:" environments.yml; then
+              echo "ERROR: Environment '${env}' not found in environments.yml"
+              exit 1
+            fi
+          done
+          echo "All environments present in environments.yml"
+
+      - name: Shellcheck deployment scripts
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck scripts/deploy.sh scripts/rollback.sh scripts/run_smoke_tests.sh || true
