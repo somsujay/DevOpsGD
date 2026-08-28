@@ -45,33 +45,60 @@
 
 ## 2. Project Structure
 
-The SQL codebase uses **schemachange** for migration management, organized under the `finance-data-platform/` root folder:
+The SQL codebase uses **schemachange** for migration management, organized under the `finance-data-platform/` root folder. Manual scripts (platform setup, grants) are kept separately in `scripts/manual-scripts/`:
 
 ```
-finance-data-platform/
-├── _platform/
-│   └── V1.000.100__setup_schemas.sql           # Schema creation (RAW, CLEAN, CONFORMED, GOVERNANCE)
-├── raw/ecomm/
-│   └── V1.050.100__create_raw_tables.sql       # Raw staging tables (T_CUSTOMER, T_ACCOUNT, T_TRANSACTION)
-├── clean/ecomm/
-│   ├── V1.050.200__create_clean_tables.sql     # Clean dimension tables (DIMCUSTOMER, DIMACCOUNT, etc.)
-│   └── R__ecomm_clean_procedures.sql          # Repeatable: Clean ETL procedures (SCD-2, SCD-1)
-├── conformed/ecomm/
-│   ├── V1.050.300__create_conformed_tables.sql # Conformed fact tables (FACTDAILYTRANSACTION, FACTDAILYAGG)
-│   ├── R__ecomm_procedures.sql                # Repeatable: Conformed ETL procedures
-│   └── R__ecomm_views.sql                     # Repeatable: Conformed views (re-run every deploy)
-├── orchestration/
-│   ├── R__orchestration.sql                    # Repeatable: Daily_ETL_Run() orchestrator
-│   └── R__ingestion_tasks.sql                  # Repeatable: Ingestion task definitions
-├── reference/
-│   ├── R__seed_data.sql                        # Repeatable: Seed/reference data
-│   └── R__iceberg_objects.sql                  # Repeatable: Iceberg/Parquet ingestion objects
-└── governance/
-    ├── V1.900.100__create_masking_policies.sql # Masking policy table/setup
-    ├── V1.900.101__create_data_quality.sql     # DATA_QUALITY_LOG table creation
-    ├── R__masking_policies.sql                 # Repeatable: Masking policy definitions & assignments
-    ├── R__data_quality_procedures.sql          # Repeatable: Data quality procedures
-    └── A__grants.sql                           # Always-run: grants (re-applied every deploy)
+.
+├── .github/
+│   ├── ENVIRONMENTS.md
+│   └── workflows/
+│       ├── branch-guard.yml
+│       ├── ci.yml
+│       ├── deploy-dev.yml
+│       ├── deploy-prod.yml
+│       └── deploy-stage.yml
+├── finance-data-platform/              # schemachange root (automated pipeline)
+│   ├── artifacts/
+│   │   ├── R__seed_data.sql            # Repeatable: Stages, file formats, streams
+│   │   └── R__iceberg_objects.sql      # Repeatable: Iceberg/Parquet ingestion objects
+│   ├── raw/ecomm/
+│   │   └── V1.050.100__create_raw_tables.sql
+│   ├── clean/ecomm/
+│   │   ├── V1.050.200__create_clean_tables.sql
+│   │   └── R__ecomm_clean_procedures.sql
+│   ├── conformed/ecomm/
+│   │   ├── V1.050.300__create_conformed_tables.sql
+│   │   ├── R__ecomm_procedures.sql
+│   │   └── R__ecomm_views.sql
+│   ├── orchestration/
+│   │   ├── R__orchestration.sql        # Daily_ETL_Run() orchestrator
+│   │   └── R__ingestion_tasks.sql      # Ingestion task definitions
+│   └── governance/
+│       ├── V1.900.100__create_masking_policies.sql
+│       ├── V1.900.101__create_data_quality.sql
+│       ├── R__masking_policies.sql
+│       └── R__data_quality_procedures.sql
+├── scripts/
+│   ├── deploy_schemachange.sh          # Automated deploy (CI + local)
+│   ├── run_smoke_tests.sh              # Post-deploy schema validation
+│   ├── run_manual.sh                   # Run manual scripts
+│   ├── rollback.sh                     # Version rollback
+│   ├── setup_rulesets.sh               # GitHub branch ruleset setup
+│   └── manual-scripts/                 # NOT in pipeline (run manually)
+│       ├── _platform/
+│       │   └── V1.000.100__setup_schemas.sql   # One-time schema creation
+│       └── A__grants.sql               # Grants (run as needed)
+├── tests/
+│   └── integration_test.sql
+├── .gitignore
+├── .sqlfluff
+├── environments.yml
+├── schemachange-config.yml
+├── README.md
+├── DEVOPS_MANUAL.md
+├── OPERATIONS.md
+├── ROLLOUT_GUIDE.md
+└── VERSIONING_STRATEGY.md
 ```
 
 ### 2.1 Schemachange Naming Conventions
