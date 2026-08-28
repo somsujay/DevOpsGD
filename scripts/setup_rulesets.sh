@@ -33,7 +33,7 @@ gh api "repos/$REPO/rulesets" --method POST --input - <<'EOF'
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
-    { "type": "pull_request", "parameters": { "required_approving_review_count": 1, "dismiss_stale_reviews_on_push": true, "require_last_push_approval": false, "required_review_thread_resolution": true } },
+    { "type": "pull_request", "parameters": { "required_approving_review_count": 1, "dismiss_stale_reviews_on_push": true, "require_last_push_approval": false, "required_review_thread_resolution": true, "require_code_owner_review": true } },
     { "type": "required_status_checks", "parameters": { "required_status_checks": [{ "context": "Enforce Branching Rules" }], "strict_required_status_checks_policy": true } }
   ]
 }
@@ -56,7 +56,7 @@ gh api "repos/$REPO/rulesets" --method POST --input - <<'EOF'
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
-    { "type": "pull_request", "parameters": { "required_approving_review_count": 1, "dismiss_stale_reviews_on_push": true, "require_last_push_approval": false, "required_review_thread_resolution": true } },
+    { "type": "pull_request", "parameters": { "required_approving_review_count": 1, "dismiss_stale_reviews_on_push": true, "require_last_push_approval": false, "required_review_thread_resolution": true, "require_code_owner_review": true } },
     { "type": "required_status_checks", "parameters": { "required_status_checks": [{ "context": "Enforce Branching Rules" }], "strict_required_status_checks_policy": true } }
   ]
 }
@@ -79,7 +79,7 @@ gh api "repos/$REPO/rulesets" --method POST --input - <<'EOF'
   "rules": [
     { "type": "deletion" },
     { "type": "non_fast_forward" },
-    { "type": "pull_request", "parameters": { "required_approving_review_count": 1, "dismiss_stale_reviews_on_push": true, "require_last_push_approval": false, "required_review_thread_resolution": true } },
+    { "type": "pull_request", "parameters": { "required_approving_review_count": 1, "dismiss_stale_reviews_on_push": true, "require_last_push_approval": false, "required_review_thread_resolution": true, "require_code_owner_review": true } },
     { "type": "required_status_checks", "parameters": { "required_status_checks": [{ "context": "Enforce Branching Rules" }], "strict_required_status_checks_policy": true } }
   ]
 }
