@@ -1,0 +1,10 @@
+# schemachange configuration
+root-folder: finance-data-platform
+modules-folder: null
+vars: {}
+change-history-table:
+  schema-name: METADATA
+  table-name: CHANGE_HISTORY
+create-change-history-table: true
+autocommit: true
+dry-run: false
